@@ -86,8 +86,93 @@ Generate Harness Agent Template files for AI-powered automation agents. This ski
 - "Generate a security scanner agent"
 - "Create a documentation generator agent"
 
+## MCP-Powered Skills
+
+These skills leverage the Harness MCP Server for enhanced functionality. Install the MCP server from https://github.com/harness/mcp-server
+
+### /debug-pipeline
+
+Analyze pipeline execution failures and suggest fixes. Uses MCP tools to:
+
+- Fetch recent execution history
+- Download and analyze execution logs
+- Identify error patterns and root causes
+- Provide specific remediation steps
+
+**Usage:** `/debug-pipeline` or ask Claude to debug a pipeline failure
+
+**Examples:**
+- "Why did my build-and-deploy pipeline fail?"
+- "Debug the last failed execution of ci-pipeline"
+- "Analyze the pipeline errors from today"
+
+### /run-pipeline
+
+Trigger and monitor Harness pipeline executions. Uses MCP tools to:
+
+- List available pipelines and input sets
+- Execute pipelines with custom inputs
+- Monitor execution progress
+- Report results and outputs
+
+**Usage:** `/run-pipeline` or ask Claude to run a pipeline
+
+**Examples:**
+- "Run the deploy pipeline with version 2.0.0"
+- "Deploy the api-service to staging"
+- "Execute the CI pipeline for the main branch"
+
+### /analyze-costs
+
+Analyze cloud costs and optimization opportunities using Harness CCM. Uses MCP tools to:
+
+- Generate cost overview reports
+- Identify optimization recommendations
+- Detect cost anomalies
+- Create Jira/ServiceNow tickets for action items
+
+**Usage:** `/analyze-costs` or ask Claude about cloud costs
+
+**Examples:**
+- "How much are we spending on cloud this month?"
+- "Find me $5,000 in monthly savings"
+- "Why did our AWS bill spike last week?"
+
+### /security-report
+
+Generate security compliance reports using Harness SCS and STO. Uses MCP tools to:
+
+- List vulnerabilities by severity
+- Download and analyze SBOMs
+- Check compliance status
+- Manage security exemptions
+
+**Usage:** `/security-report` or ask Claude for a security report
+
+**Examples:**
+- "Generate a security report for backend-service:v2.3.4"
+- "Show me all critical vulnerabilities in the payments project"
+- "Download the SBOM for our API service"
+
+### /dora-metrics
+
+Generate DORA metrics and engineering performance reports using Harness SEI. Uses MCP tools to:
+
+- Track deployment frequency, lead time, CFR, and MTTR
+- Compare team performance
+- Identify improvement opportunities
+- Generate executive summaries
+
+**Usage:** `/dora-metrics` or ask Claude for DORA metrics
+
+**Examples:**
+- "How are we doing on DORA metrics?"
+- "Compare DORA metrics across all teams"
+- "What's our deployment frequency trend?"
+
 ## Schema References
 
 - **v0 Pipelines/Templates/Triggers**: https://github.com/harness/harness-schema/tree/main/v0
 - **v1 Pipelines**: https://github.com/thisrohangupta/spec
 - **Agent Templates**: https://github.com/thisrohangupta/agents
+- **MCP Server**: https://github.com/harness/mcp-server

@@ -178,10 +178,120 @@ Create a code review agent that:
 - AI coding agent integration
 - Secret and connector handling
 
+## MCP-Powered Skills
+
+These skills leverage the [Harness MCP Server](https://github.com/harness/mcp-server) for enhanced functionality. Install and configure the MCP server to enable these skills.
+
+### `/debug-pipeline`
+
+Analyze pipeline execution failures and suggest fixes.
+
+**Capabilities:**
+- Fetch recent execution history and logs
+- Identify error patterns and root causes
+- Provide specific remediation steps
+- Detect common failure patterns
+
+**Example Usage:**
+
+```
+/debug-pipeline
+
+Analyze why the build-and-deploy pipeline failed
+and suggest how to fix it
+```
+
+**MCP Tools Used:** `list_executions`, `get_execution`, `download_execution_logs`, `get_pipeline`
+
+### `/run-pipeline`
+
+Trigger and monitor Harness pipeline executions.
+
+**Capabilities:**
+- List available pipelines and input sets
+- Execute pipelines with custom inputs
+- Monitor execution progress
+- Report results and outputs
+
+**Example Usage:**
+
+```
+/run-pipeline
+
+Deploy version 2.0.0 of the api-service to staging
+```
+
+**MCP Tools Used:** `list_pipelines`, `get_pipeline`, `list_input_sets`, `get_execution`
+
+### `/analyze-costs`
+
+Analyze cloud costs and optimization opportunities using Harness CCM.
+
+**Capabilities:**
+- Generate cost overview reports
+- Identify optimization recommendations
+- Detect cost anomalies
+- Create Jira/ServiceNow tickets for action items
+
+**Example Usage:**
+
+```
+/analyze-costs
+
+Find me $5,000 in monthly savings from our
+cloud infrastructure
+```
+
+**MCP Tools Used:** `get_ccm_overview`, `list_ccm_recommendations`, `list_ccm_anomalies`, `create_jira_ticket_for_ccm_recommendation`
+
+### `/security-report`
+
+Generate security compliance reports using Harness SCS and STO.
+
+**Capabilities:**
+- List vulnerabilities by severity
+- Download and analyze SBOMs
+- Check compliance status
+- Manage security exemptions
+
+**Example Usage:**
+
+```
+/security-report
+
+Generate a security report for backend-service:v2.3.4
+with remediation guidance for critical CVEs
+```
+
+**MCP Tools Used:** `get_all_security_issues`, `scs_get_artifact_overview`, `scs_download_sbom`, `scs_get_artifact_component_remediation`
+
+### `/dora-metrics`
+
+Generate DORA metrics and engineering performance reports using Harness SEI.
+
+**Capabilities:**
+- Track deployment frequency, lead time, CFR, and MTTR
+- Compare team performance
+- Identify improvement opportunities
+- Generate executive summaries
+
+**Example Usage:**
+
+```
+/dora-metrics
+
+Compare DORA metrics across all teams
+and identify who needs support
+```
+
+**MCP Tools Used:** `sei_deployment_frequency`, `sei_efficiency_lead_time`, `sei_change_failure_rate`, `sei_mttr`
+
 ## Schema Reference
 
-All pipelines follow the Harness v0 schema:
-https://github.com/harness/harness-schema/tree/main/v0
+- **v0 Pipelines/Templates/Triggers:** https://github.com/harness/harness-schema/tree/main/v0
+- **v1 Pipelines:** https://github.com/thisrohangupta/spec
+- **Agent Templates:** https://github.com/thisrohangupta/agents
+- **MCP Server:** https://github.com/harness/mcp-server
 
 ## Project Structure
 
@@ -193,7 +303,12 @@ harness-skills/
 │       ├── create-pipeline-v1.md    # v1 Pipeline skill
 │       ├── create-template.md       # Template skill
 │       ├── create-trigger.md        # Trigger skill
-│       └── create-agent-template.md # Agent Template skill
+│       ├── create-agent-template.md # Agent Template skill
+│       ├── debug-pipeline.md        # MCP: Pipeline debugging
+│       ├── run-pipeline.md          # MCP: Pipeline execution
+│       ├── analyze-costs.md         # MCP: Cost analysis
+│       ├── security-report.md       # MCP: Security reports
+│       └── dora-metrics.md          # MCP: DORA metrics
 ├── examples/
 │   ├── v0/                          # v0 format examples
 │   │   └── python-flask-cicd.yaml
