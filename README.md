@@ -286,6 +286,111 @@ and identify who needs support
 
 **MCP Tools Used:** `sei_deployment_frequency`, `sei_efficiency_lead_time`, `sei_change_failure_rate`, `sei_mttr`
 
+### `/gitops-status`
+
+Check GitOps application status and health using Harness GitOps.
+
+**Capabilities:**
+- Monitor ArgoCD application health
+- Check sync status across environments
+- View resource trees and pod status
+- Get pod logs for debugging
+
+**Example Usage:**
+
+```
+/gitops-status
+
+Show me the status of all production GitOps applications
+and highlight any sync issues
+```
+
+**MCP Tools Used:** `gitops_list_applications`, `gitops_get_application`, `gitops_get_app_resource_tree`, `gitops_get_pod_logs`
+
+### `/migrate-pipeline`
+
+Migrate pipelines from v0 to v1 format.
+
+**Capabilities:**
+- Read existing v0 pipeline definitions
+- Convert to simplified v1 syntax
+- Preserve all functionality
+- Show side-by-side comparison
+
+**Example Usage:**
+
+```
+/migrate-pipeline
+
+Migrate the build-and-deploy pipeline to v1 format
+and show me the differences
+```
+
+**MCP Tools Used:** `get_pipeline`, `list_pipelines`
+
+### `/chaos-experiment`
+
+Create and manage chaos experiments using Harness Chaos Engineering.
+
+**Capabilities:**
+- List and browse existing experiments
+- Create experiments from templates
+- Run chaos experiments
+- Analyze experiment results
+
+**Example Usage:**
+
+```
+/chaos-experiment
+
+Create a pod-delete chaos experiment for the
+checkout-service in the staging environment
+```
+
+**MCP Tools Used:** `chaos_experiments_list`, `chaos_experiment_describe`, `chaos_create_experiment_from_template`, `chaos_experiment_run`
+
+### `/scorecard-review`
+
+Review IDP scorecards and service maturity.
+
+**Capabilities:**
+- View service scorecards and scores
+- Check compliance with engineering standards
+- Identify improvement areas
+- Get remediation steps for failing checks
+
+**Example Usage:**
+
+```
+/scorecard-review
+
+How is the api-gateway doing on the production
+readiness scorecard?
+```
+
+**MCP Tools Used:** `get_scorecard`, `list_scorecards`, `get_score_summary`, `get_scores`
+
+### `/audit-report`
+
+Generate audit reports and compliance trails.
+
+**Capabilities:**
+- Track user actions and changes
+- Generate compliance reports
+- Investigate security incidents
+- Monitor access patterns
+
+**Example Usage:**
+
+```
+/audit-report
+
+Generate an audit report for all production
+pipeline changes in the last 30 days
+```
+
+**MCP Tools Used:** `list_user_audits`
+
 ## Schema Reference
 
 - **v0 Pipelines/Templates/Triggers:** https://github.com/harness/harness-schema/tree/main/v0
@@ -308,7 +413,12 @@ harness-skills/
 │       ├── run-pipeline.md          # MCP: Pipeline execution
 │       ├── analyze-costs.md         # MCP: Cost analysis
 │       ├── security-report.md       # MCP: Security reports
-│       └── dora-metrics.md          # MCP: DORA metrics
+│       ├── dora-metrics.md          # MCP: DORA metrics
+│       ├── gitops-status.md         # MCP: GitOps monitoring
+│       ├── migrate-pipeline.md      # MCP: v0 to v1 migration
+│       ├── chaos-experiment.md      # MCP: Chaos engineering
+│       ├── scorecard-review.md      # MCP: IDP scorecards
+│       └── audit-report.md          # MCP: Audit & compliance
 ├── examples/
 │   ├── v0/                          # v0 format examples
 │   │   └── python-flask-cicd.yaml

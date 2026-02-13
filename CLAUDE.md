@@ -170,6 +170,86 @@ Generate DORA metrics and engineering performance reports using Harness SEI. Use
 - "Compare DORA metrics across all teams"
 - "What's our deployment frequency trend?"
 
+### /gitops-status
+
+Check GitOps application status and health using Harness GitOps. Uses MCP tools to:
+
+- Monitor ArgoCD application health
+- Check sync status across environments
+- View resource trees and pod status
+- Get pod logs for debugging
+
+**Usage:** `/gitops-status` or ask Claude about GitOps applications
+
+**Examples:**
+- "Show me the status of all GitOps applications"
+- "Is the api-gateway application in sync?"
+- "Get pod logs for the failing payment-service"
+
+### /migrate-pipeline
+
+Migrate pipelines from v0 to v1 format. Uses MCP tools to:
+
+- Read existing v0 pipeline definitions
+- Convert to simplified v1 syntax
+- Preserve all functionality
+- Validate the migration
+
+**Usage:** `/migrate-pipeline` or ask Claude to migrate a pipeline
+
+**Examples:**
+- "Migrate the build-and-deploy pipeline to v1"
+- "Show me what ci-pipeline would look like in v1 format"
+- "Convert all my pipelines to the new syntax"
+
+### /chaos-experiment
+
+Create and manage chaos experiments using Harness Chaos Engineering. Uses MCP tools to:
+
+- List and browse existing experiments
+- Create experiments from templates
+- Run chaos experiments
+- Analyze experiment results
+
+**Usage:** `/chaos-experiment` or ask Claude about chaos engineering
+
+**Examples:**
+- "Show me all chaos experiments"
+- "Create a pod-delete experiment for the checkout-service"
+- "Run the weekly resilience test"
+
+### /scorecard-review
+
+Review IDP scorecards and service maturity. Uses MCP tools to:
+
+- View service scorecards and scores
+- Check compliance with engineering standards
+- Identify improvement areas
+- Get remediation steps
+
+**Usage:** `/scorecard-review` or ask Claude about service scorecards
+
+**Examples:**
+- "How is the api-gateway doing on scorecards?"
+- "Which services are failing production readiness?"
+- "Help me improve the checkout-service score"
+
+### /audit-report
+
+Generate audit reports and compliance trails. Uses MCP tools to:
+
+- Track user actions and changes
+- Generate compliance reports
+- Investigate security incidents
+- Monitor access patterns
+
+**Usage:** `/audit-report` or ask Claude for an audit report
+
+**Examples:**
+- "Generate an audit report for the last 30 days"
+- "What did john.doe do last week?"
+- "Show all production pipeline changes this month"
+
 ## Schema References
 
 - **v0 Pipelines/Templates/Triggers**: https://github.com/harness/harness-schema/tree/main/v0
