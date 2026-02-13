@@ -1,6 +1,6 @@
 ---
 name: create-pipeline
-description: Generate Harness.io v0 Pipeline YAML files for CI/CD workflows. Use when the user wants to create a Harness pipeline, build pipeline, deployment pipeline, or asks about Harness CI/CD configuration.
+description: Generate Harness.io v0 Pipeline YAML files for CI/CD workflows and optionally create them via the Harness API. Use when the user wants to create a Harness pipeline, build pipeline, deployment pipeline, or asks about Harness CI/CD configuration.
 triggers:
   - harness pipeline
   - create pipeline
@@ -11,6 +11,7 @@ triggers:
   - harness yaml
   - harness ci
   - harness cd
+  - create pipeline api
 ---
 
 # Create Pipeline Skill
@@ -1041,3 +1042,190 @@ When a user requests a pipeline:
    - `<+trigger.*>` for trigger information
 
 5. **Output the pipeline YAML** in a code block for easy copying.
+
+6. **Optionally create via API** if the user requests it.
+
+## Creating Pipelines via API
+
+After generating the pipeline YAML, you can create the pipeline in Harness using the REST API.
+
+### API Reference
+
+**Endpoint:** `POST /v1/orgs/{org}/projects/{project}/pipelines`
+
+**Documentation:** https://apidocs.harness.io/tag/Pipelines#operation/create-pipeline
+
+### Request Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `x-api-key` | Yes | Harness API key (PAT or SAT) |
+| `Harness-Account` | Yes | Account identifier |
+| `Content-Type` | Yes | `application/json` |
+
+### Path Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `org` | Yes | Organization identifier |
+| `project` | Yes | Project identifier |
+
+### Request Body
+
+```json
+{
+  "pipeline_yaml": "pipeline:\n  identifier: my_pipeline\n  name: My Pipeline\n  ..."
+}
+```
+
+The `pipeline_yaml` field contains the complete pipeline YAML as a string.
+
+### Example: Create Pipeline
+
+```bash
+curl -X POST \
+  'https://app.harness.io/v1/orgs/{org}/projects/{project}/pipelines' \
+  -H 'x-api-key: {apiKey}' \
+  -H 'Harness-Account: {accountId}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "pipeline_yaml": "pipeline:\n  identifier: nodejs_ci\n  name: Node.js CI Pipeline\n  projectIdentifier: my_project\n  orgIdentifier: my_org\n  stages:\n    - stage:\n        identifier: build\n        name: Build\n        type: CI\n        spec:\n          cloneCodebase: true\n          platform:\n            os: Linux\n            arch: Amd64\n          runtime:\n            type: Cloud\n            spec: {}\n          execution:\n            steps:\n              - step:\n                  identifier: install\n                  name: Install\n                  type: Run\n                  spec:\n                    shell: Bash\n                    command: npm ci"
+  }'
+```
+
+### Example: Create Pipeline with YAML File
+
+```bash
+# Convert YAML file to JSON request body
+PIPELINE_YAML=$(cat pipeline.yaml)
+
+curl -X POST \
+  'https://app.harness.io/v1/orgs/default/projects/my_project/pipelines' \
+  -H 'x-api-key: pat.xxxx.yyyy.zzzz' \
+  -H 'Harness-Account: abc123' \
+  -H 'Content-Type: application/json' \
+  -d "$(jq -n --arg yaml "$PIPELINE_YAML" '{pipeline_yaml: $yaml}')"
+```
+
+### Response
+
+**Success (201 Created):**
+
+```json
+{
+  "pipeline": {
+    "name": "Node.js CI Pipeline",
+    "identifier": "nodejs_ci",
+    "org": "default",
+    "project": "my_project",
+    "created": 1707500000000,
+    "updated": 1707500000000
+  }
+}
+```
+
+**Error (400 Bad Request):**
+
+```json
+{
+  "code": "INVALID_REQUEST",
+  "message": "Pipeline with identifier [nodejs_ci] already exists",
+  "status": "ERROR"
+}
+```
+
+### Update Existing Pipeline
+
+To update an existing pipeline, use PUT:
+
+**Endpoint:** `PUT /v1/orgs/{org}/projects/{project}/pipelines/{pipeline}`
+
+```bash
+curl -X PUT \
+  'https://app.harness.io/v1/orgs/{org}/projects/{project}/pipelines/{pipelineIdentifier}' \
+  -H 'x-api-key: {apiKey}' \
+  -H 'Harness-Account: {accountId}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "pipeline_yaml": "pipeline:\n  identifier: nodejs_ci\n  name: Node.js CI Pipeline (Updated)\n  ..."
+  }'
+```
+
+### Legacy API (v0)
+
+The legacy API uses query parameters instead of path parameters:
+
+**Endpoint:** `POST /pipeline/api/pipelines`
+
+```bash
+curl -X POST \
+  'https://app.harness.io/pipeline/api/pipelines?accountIdentifier={accountId}&orgIdentifier={org}&projectIdentifier={project}' \
+  -H 'x-api-key: {apiKey}' \
+  -H 'Content-Type: application/yaml' \
+  -d 'pipeline:
+  identifier: my_pipeline
+  name: My Pipeline
+  orgIdentifier: my_org
+  projectIdentifier: my_project
+  stages:
+    - stage:
+        identifier: build
+        name: Build
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  identifier: run
+                  name: Run
+                  type: Run
+                  spec:
+                    shell: Bash
+                    command: echo "Hello"'
+```
+
+### Common API Errors
+
+| Status | Code | Cause | Solution |
+|--------|------|-------|----------|
+| 400 | `INVALID_REQUEST` | Invalid YAML syntax | Validate YAML structure |
+| 400 | `DUPLICATE_IDENTIFIER` | Pipeline already exists | Use PUT to update or change identifier |
+| 401 | `UNAUTHORIZED` | Invalid or missing API key | Check API key is valid |
+| 403 | `ACCESS_DENIED` | Insufficient permissions | Verify user has pipeline create permissions |
+| 404 | `NOT_FOUND` | Org or project not found | Check org/project identifiers |
+
+### Workflow: Generate and Create
+
+When the user wants to both generate and create a pipeline:
+
+1. **Generate the pipeline YAML** following the schema guidelines above
+2. **Show the YAML** to the user for review
+3. **Ask for API credentials** if not already provided:
+   - Account ID
+   - Organization identifier
+   - Project identifier
+   - API key
+4. **Create the pipeline** using the API
+5. **Report the result** including any errors
+
+### Example Interaction
+
+```
+User: Create a Node.js CI pipeline and add it to Harness
+
+1. Generate the pipeline YAML (as shown above)
+2. Display: "Here's the pipeline YAML. To create it in Harness, I'll need:
+   - Account ID
+   - Organization identifier
+   - Project identifier
+   - API key"
+3. Once provided, execute the API call
+4. Report: "Pipeline 'nodejs_ci' created successfully in project 'my_project'"
+```

@@ -15,7 +15,7 @@ cd harness-skills
 
 ### `/create-pipeline`
 
-Generate Harness.io v0 Pipeline YAML files for CI/CD workflows.
+Generate Harness.io v0 Pipeline YAML files for CI/CD workflows and optionally create them via the Harness API.
 
 **Capabilities:**
 - CI Pipelines - Build, test, and publish workflows
@@ -23,6 +23,7 @@ Generate Harness.io v0 Pipeline YAML files for CI/CD workflows.
 - Combined CI/CD - End-to-end delivery pipelines
 - Approval Workflows - Manual and automated approval gates
 - Multi-environment deployments with parallel stages
+- API Creation - Create pipelines directly in Harness
 
 **Example Usage:**
 
@@ -54,6 +55,8 @@ Create a Node.js CI pipeline that:
 - Google Cloud Run / Functions
 - SSH / WinRM
 - And more...
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/pipelines` | [Docs](https://apidocs.harness.io/tag/Pipelines#operation/create-pipeline)
 
 ### `/create-pipeline-v1`
 
@@ -203,6 +206,212 @@ Show me the impact analysis for updating it.
 
 **API:** `GET /template/api/templates/entitySetupUsage/{templateIdentifier}`
 **Docs:** https://apidocs.harness.io/templates/listtemplateusage
+
+### `/create-service`
+
+Generate Harness.io Service YAML definitions and optionally create them via the API.
+
+**Capabilities:**
+- Kubernetes, Helm, ECS, Lambda service definitions
+- Artifact sources (Docker, ECR, GCR, ACR, S3)
+- Manifest configurations
+- Service variables
+- API Creation - Create services directly in Harness
+
+**Example Usage:**
+
+```
+/create-service
+
+Create a Kubernetes service with:
+- Docker image from ECR
+- K8s manifests from GitHub
+- Environment-specific values files
+```
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/services` | [Docs](https://apidocs.harness.io/tag/Project-Services)
+
+### `/create-environment`
+
+Generate Harness.io Environment YAML definitions and optionally create them via the API.
+
+**Capabilities:**
+- PreProduction and Production environment types
+- Environment variables and overrides
+- Environment grouping
+- API Creation - Create environments directly in Harness
+
+**Example Usage:**
+
+```
+/create-environment
+
+Create staging and production environments with:
+- Environment-specific variables
+- Database connection configs
+- Replica count settings
+```
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/environments` | [Docs](https://apidocs.harness.io/tag/Project-Environments)
+
+### `/create-infrastructure`
+
+Generate Harness.io Infrastructure Definition YAML and optionally create them via the API.
+
+**Capabilities:**
+- Kubernetes (Direct, GKE, EKS, AKS)
+- ECS, Lambda, Azure Web Apps, Cloud Run
+- SSH/WinRM for traditional deployments
+- API Creation - Create infrastructure directly in Harness
+
+**Example Usage:**
+
+```
+/create-infrastructure
+
+Create Kubernetes infrastructure definitions for:
+- Dev cluster with namespace per service
+- Prod cluster with HA configuration
+```
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/environments/{env}/infrastructures` | [Docs](https://apidocs.harness.io/tag/Project-Infrastructures)
+
+### `/create-connector`
+
+Generate Harness.io Connector YAML definitions and optionally create them via the API.
+
+**Capabilities:**
+- Git connectors (GitHub, GitLab, Bitbucket, Azure Repos)
+- Cloud providers (AWS, GCP, Azure)
+- Container registries (Docker Hub, ECR, GCR, ACR)
+- Kubernetes clusters
+- API Creation - Create connectors directly in Harness
+
+**Example Usage:**
+
+```
+/create-connector
+
+Create a GitHub connector with:
+- SSH authentication
+- API access for PR status
+- Delegate selector for private network
+```
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/connectors` | [Docs](https://apidocs.harness.io/tag/Project-Connector)
+
+### `/create-secret`
+
+Generate Harness.io Secret definitions and optionally create them via the API.
+
+**Capabilities:**
+- Secret text (passwords, tokens, API keys)
+- Secret files (certificates, config files)
+- SSH keys and WinRM credentials
+- External secret manager references
+- API Creation - Create secrets directly in Harness
+
+**Example Usage:**
+
+```
+/create-secret
+
+Create secrets for:
+- GitHub PAT for repository access
+- AWS credentials for deployments
+- SSH key for server access
+```
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/secrets` | [Docs](https://apidocs.harness.io/tag/Project-Secret)
+
+### `/create-input-set`
+
+Generate Harness.io Input Set YAML definitions and optionally create them via the API.
+
+**Capabilities:**
+- Reusable runtime inputs for pipelines
+- Environment-specific configurations
+- Overlay input sets (combining multiple)
+- API Creation - Create input sets directly in Harness
+
+**Example Usage:**
+
+```
+/create-input-set
+
+Create input sets for the deploy pipeline:
+- Development inputs (1 replica, debug logging)
+- Production inputs (5 replicas, warn logging)
+```
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/input-sets` | [Docs](https://apidocs.harness.io/tag/Input-Sets)
+
+### `/create-freeze`
+
+Generate Harness.io Deployment Freeze YAML and optionally create them via the API.
+
+**Capabilities:**
+- Time-based deployment freezes
+- Service and environment filtering
+- Recurring freeze windows
+- Global and scoped freezes
+- API Creation - Create freezes directly in Harness
+
+**Example Usage:**
+
+```
+/create-freeze
+
+Create a holiday freeze that:
+- Blocks all production deployments
+- Runs from Dec 23-26
+- Allows emergency overrides
+```
+
+**API:** `POST /ng/api/freeze` | [Docs](https://apidocs.harness.io/tag/Freeze-CRUD)
+
+### `/manage-roles`
+
+Manage Harness.io Role Assignments via the API for access control.
+
+**Capabilities:**
+- Assign built-in and custom roles
+- User, group, and service account permissions
+- Account, org, and project scopes
+- Custom roles and resource groups
+
+**Example Usage:**
+
+```
+/manage-roles
+
+Assign the pipeline executor role to the dev team
+for the staging project
+```
+
+**API:** `POST /v1/orgs/{org}/projects/{project}/role-assignments` | [Docs](https://apidocs.harness.io/tag/Account-Role-Assignments)
+
+### `/webhook-manager`
+
+Manage Harness.io GitX Webhooks via the API for Git integration.
+
+**Capabilities:**
+- GitX webhook configuration
+- Git repository sync setup
+- Webhook event monitoring
+- Multi-folder sync
+
+**Example Usage:**
+
+```
+/webhook-manager
+
+Create a GitX webhook to sync:
+- Pipelines from .harness/pipelines/
+- Templates from .harness/templates/
+```
+
+**API:** `POST /v1/gitx-webhooks` | [Docs](https://apidocs.harness.io/tag/GitX-Webhooks)
 
 ## MCP-Powered Skills
 
@@ -430,12 +639,21 @@ pipeline changes in the last 30 days
 harness-skills/
 ├── .claude/
 │   └── skills/
-│       ├── create-pipeline.md       # v0 Pipeline skill
+│       ├── create-pipeline.md       # v0 Pipeline skill + API
 │       ├── create-pipeline-v1.md    # v1 Pipeline skill
-│       ├── create-template.md       # Template skill
+│       ├── create-template.md       # Template skill + API
 │       ├── create-trigger.md        # Trigger skill
 │       ├── create-agent-template.md # Agent Template skill
 │       ├── template-usage.md        # Template references API
+│       ├── create-service.md        # Service definitions + API
+│       ├── create-environment.md    # Environment definitions + API
+│       ├── create-infrastructure.md # Infrastructure definitions + API
+│       ├── create-connector.md      # Connector definitions + API
+│       ├── create-secret.md         # Secret definitions + API
+│       ├── create-input-set.md      # Input Set definitions + API
+│       ├── create-freeze.md         # Deployment Freeze + API
+│       ├── manage-roles.md          # Role Assignments API
+│       ├── webhook-manager.md       # GitX Webhooks API
 │       ├── debug-pipeline.md        # MCP: Pipeline debugging
 │       ├── run-pipeline.md          # MCP: Pipeline execution
 │       ├── analyze-costs.md         # MCP: Cost analysis
