@@ -475,6 +475,107 @@ Get pod logs for the failing checkout-service pods
 Why is the frontend application out of sync?
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `APPLICATION_NOT_FOUND` | GitOps app doesn't exist | Verify app name and agent |
+| `AGENT_DISCONNECTED` | GitOps agent offline | Check agent pod status |
+| `CLUSTER_UNREACHABLE` | Cannot reach target cluster | Verify cluster connectivity |
+| `REPOSITORY_ERROR` | Cannot access Git repository | Check repository credentials |
+| `SYNC_FAILED` | Application sync failed | Review sync error details |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# GitOps tools not available
+Error: Tool 'gitops_list_applications' not found
+→ Ensure 'gitops' toolset is enabled in MCP server config
+
+# Agent not found
+Error: Agent 'prod-agent' not found
+→ Verify agent ID and project scope
+
+# Pod logs unavailable
+Error: Cannot fetch pod logs
+→ Check agent connectivity to cluster
+```
+
+## Troubleshooting
+
+### Application Shows Degraded
+
+1. **Check pod status:**
+   - Use resource tree to find failing pods
+   - Get pod logs for error details
+   - Review container restart counts
+
+2. **Common pod issues:**
+   - `CrashLoopBackOff` - Application crashing
+   - `ImagePullBackOff` - Cannot pull container image
+   - `Pending` - Cannot schedule pod
+   - `OOMKilled` - Out of memory
+
+3. **Resource issues:**
+   - Check resource requests/limits
+   - Verify node capacity
+   - Review PVC bindings
+
+### Application Out of Sync
+
+1. **Identify drift:**
+   - Compare live vs desired state
+   - Check for manual changes
+   - Review sync settings
+
+2. **Sync failures:**
+   - Check sync error message
+   - Verify manifests are valid
+   - Ensure resources can be applied
+
+3. **Repository issues:**
+   - Verify Git credentials
+   - Check branch/path configuration
+   - Ensure manifests accessible
+
+### Agent Connectivity Issues
+
+1. **Agent status:**
+   - Check agent pod running
+   - Review agent logs
+   - Verify network connectivity
+
+2. **Authentication:**
+   - Check agent token valid
+   - Verify cluster registration
+   - Review RBAC permissions
+
+3. **Network issues:**
+   - Check firewall rules
+   - Verify outbound connectivity
+   - Review proxy configuration
+
+### Cannot Get Pod Logs
+
+1. **Pod not found:**
+   - Verify pod name and namespace
+   - Check if pod was replaced
+   - Use current pod name from tree
+
+2. **Logs empty:**
+   - Container may not have started
+   - Check init containers
+   - Review previous container logs
+
+3. **Permission denied:**
+   - Verify agent has log access
+   - Check Kubernetes RBAC
+   - Review namespace permissions
+
 ## Instructions
 
 When checking GitOps status:

@@ -464,6 +464,106 @@ List all resource deletions in the last month
 Generate a compliance audit report for the security team
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_TIME_RANGE` | Time range too large or invalid | Use smaller time windows |
+| `USER_NOT_FOUND` | User doesn't exist | Verify user identifier |
+| `NO_AUDIT_DATA` | No events in time range | Extend time range or check scope |
+| `ACCESS_DENIED` | Cannot access audit data | Verify audit view permissions |
+| `EXPORT_FAILED` | Cannot export audit data | Check export permissions |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# Audit tools not available
+Error: Tool 'list_user_audits' not found
+→ Ensure 'audit' toolset is enabled in MCP server config
+
+# No audit data
+Error: No audit events found
+→ Verify time range and filters
+
+# Rate limited
+Error: Too many requests
+→ Reduce page size or add delays
+```
+
+## Troubleshooting
+
+### No Audit Events Found
+
+1. **Adjust time range:**
+   - Start with broader time range
+   - Use correct timestamp format
+   - Verify timezone handling
+
+2. **Check filters:**
+   - Remove restrictive filters
+   - Verify filter values valid
+   - Try without user/action filters
+
+3. **Scope verification:**
+   - Ensure org/project scope correct
+   - Verify user has access to scope
+   - Check if events at different scope
+
+### Missing User Activity
+
+1. **User identification:**
+   - Verify user ID format
+   - Check for email vs username
+   - Look for service account activity
+
+2. **Action types:**
+   - User may have only view actions
+   - Check different action types
+   - Include login events
+
+3. **Time period:**
+   - User may not have been active
+   - Extend time range
+   - Check user creation date
+
+### Incomplete Audit Trail
+
+1. **Pagination:**
+   - Results may be paginated
+   - Fetch all pages for complete data
+   - Check total count vs retrieved
+
+2. **Event filtering:**
+   - Some events may be filtered
+   - Review filter settings
+   - Check audit retention policy
+
+3. **Data retention:**
+   - Old events may be archived
+   - Check retention settings
+   - Access historical data separately
+
+### Compliance Report Gaps
+
+1. **Event types needed:**
+   - Ensure all required events captured
+   - Check event type coverage
+   - Verify logging enabled
+
+2. **User attribution:**
+   - Some system events may lack user
+   - Service accounts may show differently
+   - API calls may show API key name
+
+3. **Export format:**
+   - Use appropriate format for auditors
+   - Include all required fields
+   - Add timestamps and context
+
 ## Instructions
 
 When generating audit reports:

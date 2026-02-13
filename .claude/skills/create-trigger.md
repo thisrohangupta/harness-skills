@@ -1062,6 +1062,169 @@ trigger:
           value: <+trigger.payload.release.tag_name>
 ```
 
+## API Reference
+
+### Create Trigger via API
+
+**Endpoint:** `POST /pipeline/api/triggers`
+
+```bash
+curl -X POST 'https://app.harness.io/pipeline/api/triggers?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID&targetIdentifier=PIPELINE_ID' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'trigger:
+  identifier: my_trigger
+  name: My Trigger
+  orgIdentifier: default
+  projectIdentifier: my_project
+  pipelineIdentifier: my_pipeline
+  enabled: true
+  source:
+    type: Webhook
+    spec:
+      type: Github
+      spec:
+        type: Push
+        spec:
+          connectorRef: github_connector
+          repoName: my-org/my-repo
+          payloadConditions:
+            - key: targetBranch
+              operator: Equals
+              value: main'
+```
+
+### Update Trigger
+
+**Endpoint:** `PUT /pipeline/api/triggers/{triggerIdentifier}`
+
+```bash
+curl -X PUT 'https://app.harness.io/pipeline/api/triggers/my_trigger?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID&targetIdentifier=PIPELINE_ID' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d '<updated_trigger_yaml>'
+```
+
+### Get Trigger
+
+**Endpoint:** `GET /pipeline/api/triggers/{triggerIdentifier}`
+
+```bash
+curl -X GET 'https://app.harness.io/pipeline/api/triggers/my_trigger?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID&targetIdentifier=PIPELINE_ID' \
+  -H 'x-api-key: YOUR_API_KEY'
+```
+
+### Delete Trigger
+
+**Endpoint:** `DELETE /pipeline/api/triggers/{triggerIdentifier}`
+
+```bash
+curl -X DELETE 'https://app.harness.io/pipeline/api/triggers/my_trigger?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID&targetIdentifier=PIPELINE_ID' \
+  -H 'x-api-key: YOUR_API_KEY'
+```
+
+### Get Webhook URL
+
+After creating a webhook trigger, get the webhook URL:
+
+```bash
+curl -X GET 'https://app.harness.io/pipeline/api/webhook/triggerExecutionDetails/my_trigger?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID' \
+  -H 'x-api-key: YOUR_API_KEY'
+```
+
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing required fields | Validate YAML syntax and ensure all required fields are present |
+| `DUPLICATE_IDENTIFIER` | Trigger with same identifier exists | Use unique identifier or update existing trigger |
+| `PIPELINE_NOT_FOUND` | Target pipeline doesn't exist | Verify pipelineIdentifier is correct |
+| `CONNECTOR_NOT_FOUND` | Referenced connector doesn't exist | Create connector or fix connectorRef |
+| `INVALID_CRON_EXPRESSION` | Invalid cron syntax for scheduled trigger | Validate cron expression format |
+
+### Validation Errors
+
+```yaml
+# Common validation issues:
+
+# Invalid identifier (must start with letter or underscore)
+identifier: 123_trigger  # Wrong
+identifier: trigger_123  # Correct
+
+# Invalid operator in payload condition
+operator: equals  # Wrong (case-sensitive)
+operator: Equals  # Correct
+
+# Missing required nested spec
+source:
+  type: Webhook
+  spec:
+    type: Github
+    # Missing: spec: { type: Push, spec: {...} }
+```
+
+## Troubleshooting
+
+### Trigger Not Firing
+
+1. **Check trigger is enabled:**
+   ```yaml
+   enabled: true  # Must be true
+   ```
+
+2. **Verify webhook registration:**
+   - For Git providers, check webhook is registered in repo settings
+   - Verify webhook URL is correct
+
+3. **Check payload conditions:**
+   - Test with simpler conditions first
+   - Use JEXL debugging: `<+trigger.payload>` to see full payload
+
+4. **Verify connector permissions:**
+   - Connector must have webhook read permissions
+   - For artifact triggers, verify registry access
+
+### Scheduled Trigger Not Running
+
+1. **Verify cron expression:**
+   - Use 5-field cron format: `minute hour day month weekday`
+   - Check timezone is correct
+
+2. **Check execution history:**
+   - Navigate to Triggers > Execution History
+   - Look for skipped or failed executions
+
+### Artifact Trigger Not Detecting Updates
+
+1. **Check poll interval:**
+   ```yaml
+   pollInterval: "5m"  # Ensure reasonable interval
+   ```
+
+2. **Verify artifact path/tag filters:**
+   - Check metaDataConditions match expected tags
+   - Verify image path is correct
+
+3. **Check connector credentials:**
+   - Ensure registry credentials are valid
+   - Verify pull permissions
+
+### Webhook Payload Issues
+
+Debug webhook payloads:
+
+```yaml
+# Add to inputYaml to see full payload
+inputYaml: |
+  pipeline:
+    variables:
+      - name: debug_payload
+        type: String
+        value: <+trigger.payload>
+```
+
 ## Instructions
 
 When a user requests a trigger:

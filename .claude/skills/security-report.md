@@ -512,6 +512,96 @@ Verify the chain of custody and signatures
 for the release candidate artifact
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `ARTIFACT_NOT_FOUND` | Artifact doesn't exist | Verify artifact ID and project scope |
+| `SCAN_NOT_COMPLETE` | Security scan still running | Wait for scan completion |
+| `NO_SCAN_DATA` | No security scans performed | Run security scan first |
+| `SBOM_NOT_AVAILABLE` | SBOM not generated | Enable SBOM generation in pipeline |
+| `EXEMPTION_NOT_FOUND` | Exemption ID invalid | Check exemption identifier |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# SCS tools not available
+Error: Tool 'scs_get_artifact_overview' not found
+→ Ensure 'scs' toolset is enabled in MCP server config
+
+# STO tools not available
+Error: Tool 'get_all_security_issues' not found
+→ Ensure 'sto' toolset is enabled in MCP server config
+
+# No security data
+Error: No scan results found for artifact
+→ Verify artifact has been scanned
+```
+
+## Troubleshooting
+
+### No Security Data Available
+
+1. **Check scan configuration:**
+   - Verify security scans enabled in pipeline
+   - Check scanner step configuration
+   - Ensure scans completed successfully
+
+2. **Verify artifact ingestion:**
+   - Check artifact was properly tagged
+   - Verify SCS connector configuration
+   - Review scan logs for errors
+
+3. **Scanner connectivity:**
+   - Verify scanner service accessible
+   - Check scanner credentials
+   - Review network policies
+
+### SBOM Not Generated
+
+1. **Enable SBOM generation:**
+   - Add SBOM step to pipeline
+   - Configure output format (SPDX/CycloneDX)
+   - Verify generator tool works
+
+2. **Check dependencies:**
+   - Ensure package manager files present
+   - Verify lockfiles committed
+   - Check for unsupported languages
+
+### Exemption Workflow Issues
+
+1. **Cannot create exemption:**
+   - Verify user has exemption permissions
+   - Check vulnerability still exists
+   - Ensure proper scope selected
+
+2. **Exemption not applying:**
+   - Verify exemption approved
+   - Check exemption scope matches
+   - Review exemption expiration date
+
+3. **Approval workflow stuck:**
+   - Check approvers configured
+   - Verify notification delivery
+   - Review approval policies
+
+### Compliance Check Failures
+
+1. **Policy evaluation errors:**
+   - Verify OPA policy syntax
+   - Check policy references valid
+   - Review policy inputs
+
+2. **Missing compliance data:**
+   - Ensure all checks configured
+   - Verify data sources connected
+   - Check compliance rules active
+
 ## Instructions
 
 When generating security reports:

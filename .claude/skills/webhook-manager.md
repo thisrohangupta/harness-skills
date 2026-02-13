@@ -387,6 +387,38 @@ curl -X POST \
   }'
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed request or missing fields | Validate request structure |
+| `DUPLICATE_IDENTIFIER` | Webhook with same ID exists | Use unique identifier |
+| `CONNECTOR_NOT_FOUND` | Invalid connector reference | Verify connector exists |
+| `REPOSITORY_NOT_FOUND` | Invalid repository | Check repo name and connector access |
+
+### Validation Errors
+
+```json
+// Common webhook validation issues:
+
+// Invalid folder path format
+{
+  "folder_paths": [
+    "harness/"  // Should start with . or be relative
+    ".harness/"  // Correct
+  ]
+}
+
+// Missing required field
+{
+  "identifier": "my_webhook",
+  "name": "My Webhook"
+  // Missing: connector_ref, repo, folder_paths
+}
+```
+
 ## Troubleshooting
 
 ### Check Webhook Status
@@ -417,6 +449,35 @@ curl -X GET \
   -H 'x-api-key: {apiKey}' \
   -H 'Harness-Account: {accountId}'
 ```
+
+### Webhook Events Not Triggering
+
+1. **Check Git provider configuration:**
+   - Webhook URL must be correctly configured
+   - Content type must be `application/json`
+   - Required events must be selected
+
+2. **Verify payload signature:**
+   - Some providers require secret for validation
+   - Check webhook secret matches
+
+3. **Test webhook delivery:**
+   - Use Git provider's webhook test feature
+   - Check for delivery failures in Git UI
+
+### Entities Not Syncing
+
+1. **Verify folder paths:**
+   - Paths must match exactly (case-sensitive)
+   - Check for leading/trailing slashes
+
+2. **Check file format:**
+   - Files must be valid Harness YAML
+   - Check for syntax errors
+
+3. **Connector permissions:**
+   - Connector must have read access to repo
+   - Verify branch exists and is accessible
 
 ## Best Practices
 

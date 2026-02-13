@@ -487,6 +487,118 @@ How are we doing on security compliance?
 Help me improve the checkout-service scorecard score
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `SCORECARD_NOT_FOUND` | Scorecard doesn't exist | Verify scorecard ID |
+| `ENTITY_NOT_FOUND` | Entity not in catalog | Check entity reference |
+| `CHECK_NOT_FOUND` | Check doesn't exist | Verify check ID |
+| `NO_SCORES_AVAILABLE` | Entity not yet scored | Wait for scoring cycle |
+| `DATA_SOURCE_ERROR` | Check data source failed | Verify integration |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# IDP tools not available
+Error: Tool 'list_scorecards' not found
+→ Ensure 'idp' toolset is enabled in MCP server config
+
+# Entity not found
+Error: Entity 'component:my-service' not found
+→ Verify entity exists in catalog
+
+# Scores not computed
+Error: No scores for entity
+→ Wait for scoring or trigger manual refresh
+```
+
+## Troubleshooting
+
+### No Scores Displayed
+
+1. **Check entity registration:**
+   - Verify catalog-info.yaml committed
+   - Ensure entity discovered by catalog
+   - Check entity refresh status
+
+2. **Scoring cycle:**
+   - Scores compute periodically
+   - Wait for next scoring cycle
+   - Check scorecard schedule
+
+3. **Check configuration:**
+   - Verify checks apply to entity type
+   - Ensure data sources connected
+   - Review check targeting rules
+
+### Check Always Failing
+
+1. **Understand check requirements:**
+   - Read check description
+   - Review passing criteria
+   - Check example configurations
+
+2. **Validate entity metadata:**
+   - Ensure required annotations present
+   - Verify field values correct
+   - Check metadata syntax
+
+3. **Data source issues:**
+   - Verify integration connected
+   - Check data being collected
+   - Review API permissions
+
+### Check Data Incorrect
+
+1. **Integration issues:**
+   - Verify tool connected correctly
+   - Check API credentials valid
+   - Review data mapping
+
+2. **Caching delays:**
+   - Data may have cache delay
+   - Wait for refresh cycle
+   - Check data freshness
+
+3. **Entity mapping:**
+   - Verify entity linked to correct resources
+   - Check identifier mapping
+   - Review relationship configuration
+
+### Scorecard Not Applying
+
+1. **Entity type mismatch:**
+   - Scorecard may target specific types
+   - Verify entity kind matches
+   - Check scorecard scope
+
+2. **Filter rules:**
+   - Review scorecard filters
+   - Check entity meets criteria
+   - Verify label/annotation matching
+
+3. **Scope issues:**
+   - Ensure project/org scope correct
+   - Verify user has access
+   - Check scorecard visibility
+
+### Remediation Not Working
+
+1. **Follow exact steps:**
+   - Copy provided configurations exactly
+   - Check for typos
+   - Verify file paths
+
+2. **Refresh required:**
+   - Commit changes to Git
+   - Wait for catalog refresh
+   - Trigger manual re-score
+
 ## Instructions
 
 When reviewing scorecards:

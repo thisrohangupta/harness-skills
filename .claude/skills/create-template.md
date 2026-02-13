@@ -1359,6 +1359,41 @@ curl -X POST \
     ...'
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `TEMPLATE_ALREADY_EXISTS` | Template with same identifier + version exists | Use new version or update existing |
+| `INVALID_YAML` | Syntax error in template YAML | Validate YAML structure |
+| `MISSING_REQUIRED_FIELD` | Missing identifier/name/type/versionLabel | Add all required fields |
+| `INVALID_IDENTIFIER` | Identifier pattern mismatch | Use pattern: `^[a-zA-Z_][0-9a-zA-Z_]{0,127}$` |
+| `INVALID_VERSION` | Version label doesn't match pattern | Use pattern: `^[0-9a-zA-Z][^\s/&]{0,127}$` |
+| `CONNECTOR_NOT_FOUND` | Invalid connectorRef | Verify connector exists |
+
+### Template Validation Errors
+
+```yaml
+# Common validation issues:
+
+# Invalid version label (no spaces or special chars)
+versionLabel: "1.0 beta"  # Wrong
+versionLabel: "1.0.0-beta"  # Correct
+
+# Missing spec for template type
+template:
+  identifier: my_template
+  name: My Template
+  type: Step
+  versionLabel: "1.0.0"
+  # Missing: spec: {...}
+
+# Wrong variable reference in step template
+<+pipeline.variables.varName>  # Wrong (in step template)
+<+spec.variables.varName>      # Correct (in step template)
+```
+
 ### Common API Errors
 
 | Error | Cause | Solution |
@@ -1369,6 +1404,70 @@ curl -X POST \
 | Invalid identifier | Pattern mismatch | Use `^[a-zA-Z_][0-9a-zA-Z_]{0,127}$` |
 | Connector not found | Invalid connectorRef | Verify connector exists |
 | Permission denied | Insufficient access | Check RBAC permissions |
+
+## Troubleshooting
+
+### Template Not Appearing in Pipeline Editor
+
+1. **Check template scope:**
+   - Account templates: Use `account.template_id`
+   - Org templates: Use `org.template_id`
+   - Project templates: Use `template_id` directly
+
+2. **Verify template is stable:**
+   - Set `setDefaultTemplate=true` when creating
+   - Or reference specific version: `template_id@1.0.0`
+
+### Template Variables Not Working
+
+1. **Check variable reference syntax:**
+   ```yaml
+   # In Step templates
+   <+spec.variables.varName>
+
+   # In Stage templates
+   <+stage.variables.varName>
+
+   # In StepGroup templates
+   <+stepGroup.variables.varName>
+
+   # In Pipeline templates
+   <+pipeline.variables.varName>
+   ```
+
+2. **Verify variable is defined:**
+   - Check variables array in template
+   - Ensure variable name matches reference
+
+### Template Execution Failures
+
+1. **Input validation:**
+   - Check all required inputs are provided
+   - Verify input types match (String, Number, Secret)
+
+2. **Expression evaluation:**
+   - Test expressions with actual values
+   - Check for null/undefined references
+
+3. **Step type compatibility:**
+   - Ensure step type is valid in template context
+   - Verify step spec matches step type requirements
+
+### Version Conflicts
+
+1. **Use explicit versions:**
+   ```yaml
+   template:
+     templateRef: my_template
+     versionLabel: "1.0.0"  # Always specify version
+   ```
+
+2. **List template versions:**
+   ```bash
+   curl -X GET \
+     'https://app.harness.io/template/api/templates/my_template?accountIdentifier={accountId}' \
+     -H 'x-api-key: {apiKey}'
+   ```
 
 ### Workflow: Generate and Create
 

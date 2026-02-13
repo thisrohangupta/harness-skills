@@ -487,6 +487,90 @@ curl -X POST \
 | Org | Department-specific freezes |
 | Project | Application-specific windows |
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing fields | Validate YAML structure |
+| `DUPLICATE_IDENTIFIER` | Freeze with same ID exists | Use unique identifier |
+| `INVALID_DATETIME` | Invalid date/time format | Use `YYYY-MM-DD HH:MM AM/PM` |
+| `INVALID_TIMEZONE` | Unknown timezone | Use valid IANA timezone |
+| `INVALID_ENTITY_TYPE` | Unsupported entity type | Use Service, Env, EnvType, Pipeline |
+
+### Validation Errors
+
+```yaml
+# Common freeze validation issues:
+
+# Invalid datetime format
+windows:
+  - startTime: 2024-12-23T00:00:00  # Wrong format
+    startTime: 2024-12-23 00:00 AM  # Correct
+
+# Invalid timezone
+windows:
+  - timeZone: EST  # Wrong - use IANA
+    timeZone: America/New_York  # Correct
+
+# Invalid entity type
+entities:
+  - type: environment  # Wrong (case-sensitive)
+    type: Env  # Correct
+```
+
+## Troubleshooting
+
+### Freeze Not Blocking Deployments
+
+1. **Check freeze is enabled:**
+   ```yaml
+   status: Enabled  # Must be Enabled, not Disabled
+   ```
+
+2. **Verify window timing:**
+   - Check timezone is correct
+   - Confirm start/end times are accurate
+   - Consider daylight saving time
+
+3. **Check entity configuration:**
+   - Verify service/environment matches
+   - Check filterType is correct
+
+### Freeze Blocking Unexpected Deployments
+
+1. **Review entity scope:**
+   - `filterType: All` affects all entities
+   - Check for overly broad filters
+
+2. **Check hierarchy:**
+   - Account freezes affect all orgs/projects
+   - Org freezes affect all projects
+
+### Recurring Freeze Issues
+
+1. **Verify recurrence config:**
+   ```yaml
+   recurrence:
+     type: Weekly
+     spec:
+       until: 2024-12-31 11:59 PM  # Must have end date
+   ```
+
+2. **Check recurrence calculation:**
+   - Weekly: Same day each week
+   - Monthly: Same date each month
+
+### Override Freeze for Emergency
+
+```bash
+# Disable freeze temporarily
+curl -X POST \
+  'https://app.harness.io/ng/api/freeze/updateFreezeStatus?...' \
+  -d '{"freezeIdentifiers": ["holiday_freeze"], "status": "Disabled"}'
+```
+
 ## Instructions
 
 When creating a freeze:

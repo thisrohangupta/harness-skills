@@ -640,6 +640,109 @@ Check if the staging-pipeline can be migrated to v1
 without any issues
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `PIPELINE_NOT_FOUND` | Pipeline doesn't exist | Verify pipeline identifier and scope |
+| `UNSUPPORTED_STEP_TYPE` | Step type not supported in v1 | Note for manual migration |
+| `EXPRESSION_PARSE_ERROR` | Cannot parse v0 expression | Review expression syntax |
+| `INVALID_YAML` | Generated YAML is invalid | Check for conversion errors |
+| `FEATURE_NOT_AVAILABLE` | v1 doesn't support this feature | Document as limitation |
+
+### Migration Errors
+
+```
+# Common migration issues:
+
+# Unsupported step type
+Warning: Step type 'CustomScript' has no v1 equivalent
+→ Note for manual migration or use 'run' with custom logic
+
+# Complex expression
+Warning: Expression '<+matrix.strategy>' may need manual review
+→ Complex expressions may need adjustment
+
+# Plugin step
+Warning: Plugin step 'my-plugin' requires verification
+→ Check plugin compatibility with v1
+```
+
+## Troubleshooting
+
+### Expression Conversion Issues
+
+1. **Complex expressions:**
+   - Some v0 expressions have different v1 syntax
+   - Matrix/strategy expressions may differ
+   - Nested expressions need careful handling
+
+2. **Common expression patterns:**
+   ```yaml
+   # v0 → v1 conversion issues
+   <+pipeline.variables.x> → ${{ inputs.x }}  # If variable is input
+   <+matrix.index> → May need manual adjustment
+   <+strategy.iteration> → May need manual adjustment
+   ```
+
+3. **Validation steps:**
+   - Test expressions in v1 pipeline
+   - Verify output values match
+   - Check conditional logic works
+
+### Step Type Not Supported
+
+1. **Identify alternatives:**
+   - Most steps have v1 equivalents
+   - Custom steps may need 'run' with script
+   - Plugin steps may need actions
+
+2. **Manual conversion needed:**
+   - Document unsupported steps
+   - Provide suggested alternatives
+   - Note any functionality gaps
+
+3. **Partial migration:**
+   - Convert supported portions
+   - Flag steps needing attention
+   - Provide migration notes
+
+### YAML Validation Failures
+
+1. **Syntax errors:**
+   - Check indentation consistency
+   - Verify YAML special characters escaped
+   - Validate against v1 schema
+
+2. **Schema violations:**
+   - Ensure required fields present
+   - Check field types match schema
+   - Verify structure is correct
+
+3. **Semantic issues:**
+   - Stage references must exist
+   - Input references must be defined
+   - Service/environment refs valid
+
+### Feature Gaps
+
+1. **v1 limitations:**
+   - Some v0 features not yet in v1
+   - Document as migration blockers
+   - Suggest workarounds if available
+
+2. **Complex pipelines:**
+   - Nested templates may need review
+   - Advanced failure strategies differ
+   - Custom delegates may need adjustment
+
+3. **Mitigation strategies:**
+   - Partial migration (some stages)
+   - Hybrid approach (v0 + v1)
+   - Wait for v1 feature parity
+
 ## Instructions
 
 When migrating pipelines:

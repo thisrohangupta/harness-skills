@@ -484,6 +484,113 @@ Generate a template usage report for compliance audit
 showing all templates and their adoption
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `TEMPLATE_NOT_FOUND` | Template doesn't exist | Verify template identifier and scope |
+| `VERSION_NOT_FOUND` | Version label doesn't exist | Check version label spelling |
+| `INVALID_SCOPE` | Wrong scope parameters | Match scope to template location |
+| `ACCESS_DENIED` | Cannot access template | Verify template view permissions |
+| `PAGINATION_ERROR` | Invalid page parameters | Use valid pageIndex and pageSize |
+
+### API Response Errors
+
+```json
+// Common API errors:
+
+// Template not found
+{
+  "status": "ERROR",
+  "code": "TEMPLATE_NOT_FOUND",
+  "message": "Template with identifier 'my_template' not found"
+}
+→ Verify template ID and scope (account/org/project)
+
+// Invalid version
+{
+  "status": "ERROR",
+  "code": "VERSION_NOT_FOUND",
+  "message": "Version 'v1.0.0' not found for template"
+}
+→ Check available versions or use isStableTemplate=true
+
+// Scope mismatch
+{
+  "status": "ERROR",
+  "code": "INVALID_REQUEST",
+  "message": "orgIdentifier required for org-level template"
+}
+→ Include correct scope parameters
+```
+
+## Troubleshooting
+
+### No Usage Data Returned
+
+1. **Template actually unused:**
+   - Template may have no references
+   - Check if recently created
+   - Verify not orphaned
+
+2. **Wrong scope:**
+   - Query scope must match template scope
+   - Account templates need only accountId
+   - Project templates need all three identifiers
+
+3. **Version filtering:**
+   - isStableTemplate=true only checks stable
+   - Use allVersions=true for all references
+   - Check specific version with versionLabel
+
+### Incomplete Usage List
+
+1. **Pagination needed:**
+   - Default pageSize may be too small
+   - Check totalItems vs returned items
+   - Iterate through all pages
+
+2. **Cross-scope references:**
+   - Account templates may be used in any project
+   - Query may need broader scope
+   - Check different orgs/projects
+
+3. **Template type filter:**
+   - templateEntityType filters results
+   - Remove filter to see all usages
+   - Check correct type used
+
+### Impact Analysis Issues
+
+1. **Indirect references:**
+   - Templates can reference other templates
+   - Build full dependency chain
+   - Check transitive dependencies
+
+2. **Version complexity:**
+   - Different entities may use different versions
+   - Track version usage separately
+   - Consider version-specific impacts
+
+3. **Breaking changes:**
+   - Identify what's changing
+   - Map to affected entities
+   - Plan staged rollout
+
+### API Performance
+
+1. **Large result sets:**
+   - Use pagination for many references
+   - Consider filtering options
+   - Cache results if needed
+
+2. **Multiple queries needed:**
+   - May need multiple API calls
+   - Aggregate results client-side
+   - Consider batching requests
+
 ## Instructions
 
 When checking template usage:

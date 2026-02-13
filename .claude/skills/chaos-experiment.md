@@ -525,6 +525,118 @@ Analyze the results of today's chaos runs
 and identify any services that need improvement
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `EXPERIMENT_NOT_FOUND` | Experiment doesn't exist | Verify experiment ID and project |
+| `INFRASTRUCTURE_OFFLINE` | Chaos infrastructure down | Check chaos agent status |
+| `TARGET_NOT_FOUND` | Target pods/nodes not found | Verify label selectors |
+| `PROBE_FAILED` | Resilience probe failed | Check probe configuration |
+| `PERMISSION_DENIED` | Cannot inject fault | Verify RBAC permissions |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# Chaos tools not available
+Error: Tool 'chaos_experiments_list' not found
+→ Ensure 'chaos' toolset is enabled in MCP server config
+
+# Infrastructure not connected
+Error: No chaos infrastructure available
+→ Install and configure chaos infrastructure
+
+# Template not found
+Error: Template 'pod-delete' not found
+→ Verify template ID and project scope
+```
+
+## Troubleshooting
+
+### Experiment Won't Start
+
+1. **Check infrastructure:**
+   - Verify chaos infrastructure installed
+   - Check chaos agent pod running
+   - Ensure agent connected to Harness
+
+2. **Target validation:**
+   - Verify target pods/nodes exist
+   - Check label selector matches
+   - Ensure namespace accessible
+
+3. **Permissions:**
+   - Verify chaos RBAC configured
+   - Check service account permissions
+   - Review pod security policies
+
+### Fault Injection Failures
+
+1. **Pod faults:**
+   - Verify pod exists and running
+   - Check container runtime compatible
+   - Ensure sidecar injection works
+
+2. **Network faults:**
+   - Check network policy allows traffic
+   - Verify CNI plugin compatible
+   - Ensure iptables/tc available
+
+3. **Node faults:**
+   - Verify node-level access
+   - Check privileged permissions
+   - Ensure host access available
+
+### Probe Issues
+
+1. **HTTP probe failing:**
+   - Verify endpoint accessible
+   - Check URL and port correct
+   - Review expected response code
+
+2. **Command probe failing:**
+   - Verify command syntax
+   - Check execution context
+   - Review expected output
+
+3. **Prometheus probe failing:**
+   - Verify Prometheus endpoint
+   - Check query syntax
+   - Ensure metrics available
+
+### Experiment Results Unclear
+
+1. **Analyze probe data:**
+   - Review all probe results
+   - Check timing of failures
+   - Correlate with fault injection
+
+2. **Verify steady state:**
+   - Ensure pre-chaos checks passed
+   - Verify baseline established
+   - Check post-chaos recovery
+
+3. **Insufficient data:**
+   - Increase experiment duration
+   - Add more probes
+   - Run multiple iterations
+
+### Infrastructure Connection Issues
+
+1. **Agent not connecting:**
+   - Check network connectivity
+   - Verify agent token valid
+   - Review firewall rules
+
+2. **Agent unhealthy:**
+   - Check agent pod logs
+   - Verify resource availability
+   - Review cluster health
+
 ## Instructions
 
 When working with chaos experiments:

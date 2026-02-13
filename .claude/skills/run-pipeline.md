@@ -445,6 +445,70 @@ Show me available pipelines for the payments project
 What's the status of execution xyz123?
 ```
 
+## Troubleshooting
+
+### Pipeline Won't Start
+
+1. **Check delegate availability:**
+   - Verify delegate is online
+   - Check delegate tags match pipeline requirements
+   - Review delegate resource limits
+
+2. **Validate inputs:**
+   - All required inputs must have values
+   - Check input types match expected
+   - Verify secret references exist
+
+3. **Check connector status:**
+   - Test connectors before execution
+   - Verify credentials haven't expired
+
+### Input Set Issues
+
+1. **Input set not found:**
+   - Verify input set belongs to this pipeline
+   - Check identifier spelling
+   - Ensure input set is at correct scope
+
+2. **Merge conflicts:**
+   - Later input sets override earlier
+   - Check for conflicting values
+   - Verify all required inputs covered
+
+3. **Validation failures:**
+   - Input values must match pipeline variable types
+   - Allowed values must be respected
+   - Required fields cannot be empty
+
+### Execution Monitoring Issues
+
+1. **Status not updating:**
+   - Poll at reasonable intervals (5-10 seconds)
+   - Check for network timeouts
+   - Verify execution ID is correct
+
+2. **Execution URL not working:**
+   - Check user has UI access
+   - Verify account/org/project in URL
+   - Ensure execution exists
+
+### Common Execution Failures
+
+1. **Timeout errors:**
+   - Increase step/stage timeout
+   - Check for deadlocks
+   - Review resource availability
+
+2. **Authentication failures:**
+   - Rotate expired credentials
+   - Verify connector configuration
+   - Check secret references
+
+3. **Resource not found:**
+   - Verify service/environment exists
+   - Check identifier spelling
+   - Ensure resources at correct scope
+
 ## Instructions
 
 When a user wants to run a pipeline:

@@ -423,6 +423,85 @@ For production environments:
 - Configure freeze windows
 - Enable deployment notifications
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing fields | Validate YAML structure |
+| `DUPLICATE_IDENTIFIER` | Environment with same ID exists | Use unique identifier |
+| `INVALID_ENVIRONMENT_TYPE` | Invalid type value | Use `PreProduction` or `Production` |
+| `SECRET_NOT_FOUND` | Referenced secret doesn't exist | Create secret first |
+
+### Validation Errors
+
+```yaml
+# Common environment validation issues:
+
+# Invalid environment type
+type: production  # Wrong (case-sensitive)
+type: Production  # Correct
+
+# Invalid variable type
+variables:
+  - name: count
+    type: number  # Wrong
+    type: Number  # Correct
+
+# Missing secret reference
+variables:
+  - name: password
+    type: Secret
+    value: my_password  # Wrong (should be secret reference)
+    value: <+secrets.getValue("my_password")>  # Correct
+```
+
+## Troubleshooting
+
+### Environment Not Available in Pipeline
+
+1. **Check environment scope:**
+   - Project environments: Available in that project only
+   - Org environments: Available across projects in org
+   - Account environments: Available everywhere
+
+2. **Verify environment type:**
+   - Production environments may have additional restrictions
+   - Check for freeze windows affecting the environment
+
+### Variable Resolution Issues
+
+1. **Check variable syntax:**
+   ```yaml
+   # Reference in pipeline
+   <+env.variables.LOG_LEVEL>
+   ```
+
+2. **Verify variable exists:**
+   - Check environment YAML for variable definition
+   - Ensure variable name matches exactly (case-sensitive)
+
+### Override Not Applied
+
+1. **Verify override structure:**
+   - Overrides must match service manifest structure
+   - Check file paths are correct
+
+2. **Check precedence:**
+   - Environment overrides take precedence over service defaults
+   - Infrastructure overrides take precedence over environment
+
+### Production Safeguards
+
+1. **Approval requirements:**
+   - Production type environments may require approvals
+   - Check governance policies
+
+2. **Freeze windows:**
+   - Verify no active freeze affects the environment
+   - Check freeze scope configuration
+
 ## Instructions
 
 When creating an environment:

@@ -25,7 +25,7 @@ Agent templates are modular pipeline definitions that encapsulate AI-powered aut
 
 ## Schema Reference
 
-Source: https://github.com/thisrohangupta/agents
+Source: https://github.com/harness/harness-schema/tree/main/agent-templates
 
 ## Template Structure
 
@@ -789,6 +789,194 @@ Standard AI coding agent pattern:
 - Use meaningful step names
 - Include proper error handling
 - Set appropriate timeouts
+
+## API Reference
+
+### Register Agent Template via API
+
+**Endpoint:** `POST /v1/orgs/{org}/projects/{project}/agent-templates`
+
+```bash
+curl -X POST 'https://app.harness.io/v1/orgs/default/projects/my_project/agent-templates' \
+  -H 'Content-Type: multipart/form-data' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID' \
+  -F 'metadata=@metadata.json' \
+  -F 'pipeline=@pipeline.yaml' \
+  -F 'wiki=@wiki.MD'
+```
+
+### Update Agent Template
+
+**Endpoint:** `PUT /v1/orgs/{org}/projects/{project}/agent-templates/{template-id}`
+
+```bash
+curl -X PUT 'https://app.harness.io/v1/orgs/default/projects/my_project/agent-templates/code-review' \
+  -H 'Content-Type: multipart/form-data' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID' \
+  -F 'metadata=@metadata.json' \
+  -F 'pipeline=@pipeline.yaml' \
+  -F 'wiki=@wiki.MD'
+```
+
+### List Agent Templates
+
+**Endpoint:** `GET /v1/orgs/{org}/projects/{project}/agent-templates`
+
+```bash
+curl -X GET 'https://app.harness.io/v1/orgs/default/projects/my_project/agent-templates' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID'
+```
+
+### Execute Agent
+
+**Endpoint:** `POST /v1/orgs/{org}/projects/{project}/agent-templates/{template-id}/execute`
+
+```bash
+curl -X POST 'https://app.harness.io/v1/orgs/default/projects/my_project/agent-templates/code-review/execute' \
+  -H 'Content-Type: application/json' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID' \
+  -d '{
+    "inputs": {
+      "repo": "my-org/my-repo",
+      "pullReq": "123"
+    }
+  }'
+```
+
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_METADATA` | Invalid metadata.json format | Verify JSON syntax and required fields |
+| `INVALID_VERSION` | Invalid semver format | Use `MAJOR.MINOR.PATCH` format |
+| `DUPLICATE_NAME` | Template with same name exists | Use unique name or update existing |
+| `PIPELINE_VALIDATION_ERROR` | Invalid pipeline.yaml | Check v1 pipeline syntax |
+| `CONNECTOR_NOT_FOUND` | Referenced connector doesn't exist | Create connector before using |
+
+### Metadata Validation
+
+```json
+// Common metadata errors:
+
+// Missing required field
+{
+  "name": "My Agent"
+  // Missing: "description" and "version"
+}
+
+// Invalid version format
+{
+  "name": "My Agent",
+  "description": "Description",
+  "version": "1.0"  // Wrong: Must be "1.0.0"
+}
+```
+
+### Pipeline Expression Errors
+
+```yaml
+# Wrong: Missing input definition
+steps:
+- run:
+    env:
+      API_KEY: <+inputs.undefinedInput>  # Error: input not defined
+
+# Correct: Define input first
+inputs:
+  apiKey:
+    type: secret
+steps:
+- run:
+    env:
+      API_KEY: <+inputs.apiKey>
+```
+
+## Troubleshooting
+
+### Agent Not Executing
+
+1. **Verify all required inputs are provided:**
+   - Check `required: true` inputs have values
+   - Verify connector inputs are valid
+
+2. **Check clone configuration:**
+   ```yaml
+   clone:
+     repo: <+inputs.repo>
+     connector: "<+inputs.gitConnector != null ? inputs.gitConnector.id : ''>"
+   ```
+
+3. **Verify container images are accessible:**
+   - Check registry credentials
+   - Verify image tags exist
+
+### SCM Provider Detection Failing
+
+1. **Check environment variables:**
+   - `DRONE_REPO_SCM` must be available
+   - `DRONE_NETRC_*` variables for authentication
+
+2. **Verify connector token access:**
+   ```yaml
+   env:
+     SCM_TOKEN: <+inputs.gitConnector.token>
+   ```
+
+### PR Creation Failing
+
+1. **Verify git changes exist:**
+   ```yaml
+   - run:
+       shell: bash
+       script: |-
+         git add -A
+         if git diff --cached --quiet; then
+           echo "No changes to commit"
+           exit 0
+         fi
+   ```
+
+2. **Check PR plugin configuration:**
+   - Verify `PLUGIN_TOKEN` is set correctly
+   - Check `PLUGIN_REPO` format matches SCM provider
+
+3. **Verify branch permissions:**
+   - Token must have write access to create branches
+   - PR creation requires appropriate permissions
+
+### AI Agent Step Timeouts
+
+1. **Increase max_iterations:**
+   ```yaml
+   with:
+     max_iterations: "100"  # Increase if complex task
+   ```
+
+2. **Check API key validity:**
+   ```yaml
+   env:
+     ANTHROPIC_API_KEY: <+inputs.llmConnector.token>
+   ```
+
+### Output Variables Not Available
+
+1. **Verify output writing:**
+   ```yaml
+   script: |-
+     echo "VAR_NAME=value" >> $DRONE_OUTPUT
+     echo "SECRET_VAR=secret" >> $HARNESS_OUTPUT_SECRET_FILE
+   ```
+
+2. **Check output reference syntax:**
+   ```yaml
+   <+pipeline.stages.STAGE_NAME.steps.STEP_NAME.output.outputVariables.VAR_NAME>
+   ```
 
 ## Instructions
 

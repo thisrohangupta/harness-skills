@@ -477,6 +477,118 @@ Find me $5,000 in monthly savings from our cloud infrastructure
 Our cloud bill jumped 30% last week - what happened?
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `NO_DATA_AVAILABLE` | No cost data for period | Check cloud connector status |
+| `PERSPECTIVE_NOT_FOUND` | Perspective doesn't exist | Verify perspective ID |
+| `RECOMMENDATION_NOT_FOUND` | Recommendation ID invalid | Check recommendation exists |
+| `CONNECTOR_ERROR` | Cloud connector issue | Verify connector credentials |
+| `BUDGET_NOT_FOUND` | Budget doesn't exist | Check budget configuration |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# CCM tools not available
+Error: Tool 'get_ccm_overview' not found
+→ Ensure 'ccm' toolset is enabled in MCP server config
+
+# No cost data
+Error: No cost data available for time period
+→ Verify cloud connectors configured and synced
+
+# Recommendation not actionable
+Error: Recommendation already applied
+→ Refresh recommendations list
+```
+
+## Troubleshooting
+
+### No Cost Data Available
+
+1. **Check cloud connectors:**
+   - Verify connector status
+   - Check IAM permissions
+   - Ensure billing access granted
+
+2. **Data sync timing:**
+   - Initial sync takes 24-48 hours
+   - Check last sync timestamp
+   - Verify no sync errors
+
+3. **Time period issues:**
+   - Data may not be available for period
+   - Check data retention settings
+   - Use supported time ranges
+
+### Recommendations Not Showing
+
+1. **Resource eligibility:**
+   - Some resources may not qualify
+   - Check minimum running time
+   - Verify resource type supported
+
+2. **Data requirements:**
+   - Need usage data for analysis
+   - Check metrics collection
+   - Ensure monitoring enabled
+
+3. **Threshold settings:**
+   - Small savings may be filtered
+   - Adjust minimum savings threshold
+   - Check recommendation settings
+
+### Anomaly Detection Issues
+
+1. **Baseline establishment:**
+   - Need historical data for baseline
+   - Allow time for pattern learning
+   - Check baseline configuration
+
+2. **Sensitivity settings:**
+   - May be too sensitive/insensitive
+   - Adjust anomaly thresholds
+   - Review alert configuration
+
+3. **False positives:**
+   - Known events may trigger
+   - Add exclusions for planned changes
+   - Review anomaly categories
+
+### Perspective Data Incorrect
+
+1. **Filter configuration:**
+   - Check perspective filters
+   - Verify cost allocation rules
+   - Review label/tag mapping
+
+2. **Cost allocation:**
+   - Shared costs may not allocate
+   - Check allocation rules
+   - Verify allocation keys
+
+3. **Data freshness:**
+   - Perspectives may have cache delay
+   - Check last refresh time
+   - Trigger manual refresh if needed
+
+### Ticket Creation Failures
+
+1. **Connector issues:**
+   - Verify Jira/ServiceNow connector
+   - Check authentication valid
+   - Review project access
+
+2. **Required fields:**
+   - Ensure all required fields provided
+   - Check field formats
+   - Verify project/issue type valid
+
 ## Instructions
 
 When analyzing costs:

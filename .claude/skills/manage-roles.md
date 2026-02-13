@@ -452,6 +452,89 @@ curl -X POST \
 - **Monitor privileged access** - Audit admin role usage
 - **Emergency access process** - Document break-glass procedures
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed request or missing fields | Validate request structure |
+| `DUPLICATE_IDENTIFIER` | Role assignment already exists | Check for existing assignment |
+| `ROLE_NOT_FOUND` | Invalid role identifier | Use valid built-in or custom role |
+| `RESOURCE_GROUP_NOT_FOUND` | Invalid resource group | Verify resource group exists |
+| `PRINCIPAL_NOT_FOUND` | User/group/SA doesn't exist | Create principal first |
+
+### Validation Errors
+
+```json
+// Common role assignment issues:
+
+// Invalid principal type
+{
+  "principal": {
+    "identifier": "user@example.com",
+    "type": "user"  // Wrong (case-sensitive)
+    "type": "USER"  // Correct
+  }
+}
+
+// Invalid role identifier
+{
+  "role_identifier": "account_admin"  // Wrong
+  "role_identifier": "_account_admin"  // Correct (built-in roles start with _)
+}
+```
+
+## Troubleshooting
+
+### User Can't Access Resources
+
+1. **Check role assignment exists:**
+   - Verify at correct scope (account/org/project)
+   - Check assignment isn't disabled
+
+2. **Verify role permissions:**
+   - Built-in roles have fixed permissions
+   - Custom roles may be missing permissions
+
+3. **Check resource group scope:**
+   - Ensure resource group includes target resources
+   - Verify scope matches user needs
+
+### Permission Denied Errors
+
+1. **Check inheritance:**
+   - Account roles inherit to org/project
+   - Org roles inherit to project
+
+2. **Verify specific permissions:**
+   ```bash
+   # List user's effective permissions
+   curl -X GET \
+     'https://app.harness.io/authz/api/acl?principal={userId}&...' \
+     -H 'x-api-key: {apiKey}'
+   ```
+
+### Service Account Issues
+
+1. **Token permissions:**
+   - SA inherits permissions from role assignments
+   - Check token isn't expired
+
+2. **Scope limitations:**
+   - SA can only act within assigned scope
+   - Project SA can't access other projects
+
+### Role Assignment Not Taking Effect
+
+1. **Clear cache:**
+   - Logout and login for UI changes
+   - API changes may take a few minutes
+
+2. **Check conflicts:**
+   - Multiple role assignments combine
+   - Most permissive wins for a resource
+
 ## Instructions
 
 When managing roles:

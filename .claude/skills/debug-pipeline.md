@@ -312,6 +312,96 @@ Show me the last 3 failures of the staging-deploy pipeline
 and identify any patterns
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `EXECUTION_NOT_FOUND` | Execution ID doesn't exist | Verify execution ID and project scope |
+| `PIPELINE_NOT_FOUND` | Pipeline doesn't exist | Check pipeline identifier spelling |
+| `ACCESS_DENIED` | Insufficient permissions | Verify user has pipeline view access |
+| `LOGS_UNAVAILABLE` | Logs expired or not generated | Check log retention policy |
+| `MCP_CONNECTION_ERROR` | Cannot connect to MCP server | Verify MCP server is running |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# Tool not available
+Error: Tool 'download_execution_logs' not found
+→ Ensure 'logs' toolset is enabled in MCP server config
+
+# Invalid parameters
+Error: Missing required parameter 'pipeline_id'
+→ Provide all required parameters
+
+# Authentication failed
+Error: Invalid or expired API key
+→ Check MCP server API key configuration
+```
+
+## Troubleshooting
+
+### Logs Not Available
+
+1. **Check execution status:**
+   - Logs may not exist for aborted executions
+   - Very recent executions may have delayed logs
+
+2. **Verify log retention:**
+   - Logs expire based on account settings
+   - Check if execution is within retention window
+
+3. **Check delegate logs:**
+   - If delegate-side, logs may be on delegate host
+   - Use delegate troubleshooting tools
+
+### Cannot Find Execution
+
+1. **Verify scope:**
+   - Check org/project identifiers
+   - Execution may be in different project
+
+2. **Check filters:**
+   - Remove status filter to see all executions
+   - Try broader time range
+
+3. **Permissions:**
+   - User may not have access to all executions
+   - Check RBAC settings
+
+### MCP Tools Not Working
+
+1. **Connection issues:**
+   - Verify MCP server is running
+   - Check network connectivity
+   - Validate API credentials
+
+2. **Toolset configuration:**
+   - Ensure required toolsets are enabled
+   - Check MCP server logs for errors
+
+3. **Parameter validation:**
+   - Verify all required parameters provided
+   - Check parameter types (string vs number)
+
+### Analysis Tips
+
+1. **Start broad, then narrow:**
+   - Get execution overview first
+   - Then drill into specific stages/steps
+
+2. **Check related executions:**
+   - Is this a recurring failure?
+   - Did previous executions pass?
+
+3. **Review recent changes:**
+   - Pipeline modifications
+   - Infrastructure changes
+   - Connector updates
+
 ## Instructions
 
 When a user asks to debug a pipeline:

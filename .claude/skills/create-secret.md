@@ -538,6 +538,96 @@ curl -X POST \
   ...
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed request or missing fields | Validate request structure |
+| `DUPLICATE_IDENTIFIER` | Secret with same ID exists | Use unique identifier |
+| `SECRET_MANAGER_NOT_FOUND` | Invalid secret manager reference | Verify secret manager exists |
+| `ENCRYPTION_FAILED` | Unable to encrypt secret | Check secret manager connectivity |
+| `INVALID_SECRET_TYPE` | Unsupported secret type | Use SecretText, SecretFile, SSHKey, or WinRmCredentials |
+
+### Validation Errors
+
+```yaml
+# Common secret validation issues:
+
+# Invalid valueType
+spec:
+  valueType: inline  # Wrong (case-sensitive)
+  valueType: Inline  # Correct
+
+# Missing SSH credential spec
+type: SSHKey
+spec:
+  auth:
+    type: SSH
+    spec:
+      credentialType: KeyReference
+      # Missing: spec: { userName, key }
+
+# Invalid secret manager reference
+secretManagerIdentifier: vault  # May not exist
+secretManagerIdentifier: harnessSecretManager  # Built-in
+```
+
+## Troubleshooting
+
+### Secret Not Accessible
+
+1. **Check scope:**
+   - Project secrets: Use identifier directly
+   - Org secrets: Use `org.secret_id`
+   - Account secrets: Use `account.secret_id`
+
+2. **Verify permissions:**
+   - Check user/service account has secret access
+   - Verify RBAC role includes secret view
+
+### Secret Manager Connection Issues
+
+1. **External secret manager:**
+   - Verify connector is valid
+   - Check network connectivity from delegate
+
+2. **HashiCorp Vault:**
+   - Verify path is correct
+   - Check token permissions
+
+3. **AWS Secrets Manager:**
+   - Verify IAM permissions
+   - Check secret name/ARN
+
+### SSH Key Issues
+
+1. **Key format:**
+   - Ensure PEM format for private key
+   - Check key isn't password-protected (or provide passphrase)
+
+2. **Connection failures:**
+   - Verify username is correct
+   - Check target server accepts key auth
+
+### Secret Reference Errors
+
+```yaml
+# Debug secret references
+steps:
+  - step:
+      type: Run
+      spec:
+        command: |
+          # This will fail - secrets are masked
+          echo $MY_SECRET
+          # Use secrets for actual operations
+          curl -H "Authorization: Bearer $MY_SECRET" ...
+        envVariables:
+          MY_SECRET: <+secrets.getValue("my_api_key")>
+```
+
 ## Instructions
 
 When creating a secret:

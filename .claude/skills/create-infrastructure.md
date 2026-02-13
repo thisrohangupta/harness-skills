@@ -485,6 +485,92 @@ namespace: <+service.identifier>-<+env.identifier>
 namespace: production
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing fields | Validate YAML structure |
+| `DUPLICATE_IDENTIFIER` | Infrastructure with same ID exists | Use unique identifier |
+| `CONNECTOR_NOT_FOUND` | Referenced connector doesn't exist | Create connector first |
+| `ENVIRONMENT_NOT_FOUND` | Referenced environment doesn't exist | Create environment first |
+| `TYPE_MISMATCH` | Infrastructure type doesn't match deployment type | Ensure compatibility |
+
+### Validation Errors
+
+```yaml
+# Common infrastructure validation issues:
+
+# Mismatched deployment and infrastructure types
+deploymentType: Kubernetes
+type: ECS  # Wrong - doesn't match deployment type
+type: KubernetesDirect  # Correct
+
+# Missing required namespace
+type: KubernetesDirect
+spec:
+  connectorRef: k8s_connector
+  # Missing: namespace
+
+# Invalid release name expression
+releaseName: <+service.name>  # Wrong (has spaces)
+releaseName: <+service.identifier>  # Correct
+```
+
+## Troubleshooting
+
+### Infrastructure Not Selectable in Pipeline
+
+1. **Check environment reference:**
+   - Infrastructure must be linked to correct environment
+   - Verify environmentRef matches
+
+2. **Verify deployment type compatibility:**
+   - Infrastructure type must match pipeline deployment type
+   - Check stage deploymentType setting
+
+### Deployment Failures
+
+1. **Connector connectivity:**
+   - Test connector in Harness UI
+   - Verify delegate can reach cluster
+
+2. **Namespace issues:**
+   - Check namespace exists in cluster
+   - Verify service account permissions
+
+3. **Cluster authentication:**
+   - Verify credentials are valid
+   - Check certificate expiration
+
+### Kubernetes-Specific Issues
+
+1. **Permission errors:**
+   ```bash
+   # Check service account permissions
+   kubectl auth can-i create deployments --namespace=<namespace>
+   ```
+
+2. **Namespace not found:**
+   - Create namespace before deployment
+   - Use auto-create if supported
+
+3. **Release name conflicts:**
+   ```yaml
+   # Use unique release names
+   releaseName: release-<+INFRA_KEY_SHORT_ID>
+   ```
+
+### Cloud Provider Issues
+
+1. **GKE/EKS/AKS connectivity:**
+   - Verify cloud connector credentials
+   - Check cluster is accessible
+
+2. **Region/zone mismatch:**
+   - Ensure region in infrastructure matches cluster location
+
 ## Instructions
 
 When creating infrastructure:

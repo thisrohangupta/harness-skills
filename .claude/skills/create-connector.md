@@ -643,6 +643,107 @@ connector:
 4. **Prefer IAM roles** over static credentials
 5. **Rotate credentials** regularly
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing fields | Validate YAML structure |
+| `DUPLICATE_IDENTIFIER` | Connector with same ID exists | Use unique identifier |
+| `SECRET_NOT_FOUND` | Referenced secret doesn't exist | Create secret first |
+| `INVALID_CREDENTIALS` | Authentication failed during test | Verify credentials |
+| `DELEGATE_NOT_AVAILABLE` | No delegate matches selectors | Check delegate status |
+
+### Validation Errors
+
+```yaml
+# Common connector validation issues:
+
+# Wrong authentication type for provider
+type: Github
+spec:
+  authentication:
+    type: SSH
+    spec:
+      type: UsernamePassword  # Wrong - SSH doesn't use UsernamePassword
+      type: sshKeyRef  # Correct
+
+# Missing required field for auth type
+authentication:
+  type: Http
+  spec:
+    type: UsernameToken
+    spec:
+      username: my-user
+      # Missing: tokenRef
+
+# Invalid secret reference
+tokenRef: github_pat  # Just identifier - may need scope prefix
+tokenRef: account.github_pat  # With scope prefix
+```
+
+## Troubleshooting
+
+### Connector Test Fails
+
+1. **Check credentials:**
+   - Verify secret values are correct
+   - Check for expired tokens
+
+2. **Network connectivity:**
+   - Ensure delegate can reach target
+   - Check firewall rules
+
+3. **Permission issues:**
+   - Verify API token has required scopes
+   - Check service account permissions
+
+### Git Connector Issues
+
+1. **Authentication failures:**
+   - For HTTPS: Check PAT has repo access
+   - For SSH: Verify SSH key is in correct format
+
+2. **Repository not found:**
+   - Check repository URL is correct
+   - Verify organization/user name
+
+3. **Clone failures:**
+   - Check branch exists
+   - Verify depth setting
+
+### Cloud Connector Issues
+
+1. **AWS:**
+   - Verify access key and secret
+   - Check IAM permissions
+   - For IRSA: Verify service account annotation
+
+2. **GCP:**
+   - Check service account key is valid JSON
+   - Verify required APIs are enabled
+   - For workload identity: Check namespace/SA binding
+
+3. **Azure:**
+   - Verify tenant ID and client ID
+   - Check client secret isn't expired
+   - For MSI: Verify managed identity assignment
+
+### Kubernetes Connector Issues
+
+1. **Direct connection:**
+   - Verify master URL is reachable
+   - Check service account token
+
+2. **Inherit from delegate:**
+   - Ensure delegate runs in target cluster
+   - Check delegate service account permissions
+
+3. **Certificate issues:**
+   - Verify CA certificate is correct
+   - Check certificate chain is complete
+
 ## Instructions
 
 When creating a connector:

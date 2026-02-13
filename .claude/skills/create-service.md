@@ -620,6 +620,89 @@ service:
           value: <+secrets.getValue("ecommerce_db_password")>
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing fields | Validate YAML structure |
+| `DUPLICATE_IDENTIFIER` | Service with same ID exists | Use unique identifier or update existing |
+| `CONNECTOR_NOT_FOUND` | Referenced connector doesn't exist | Create connector first |
+| `INVALID_DEPLOYMENT_TYPE` | Unsupported deployment type | Use valid type (Kubernetes, NativeHelm, ECS, etc.) |
+| `MANIFEST_NOT_FOUND` | Manifest path doesn't exist | Verify Git path and connector |
+
+### Validation Errors
+
+```yaml
+# Common service validation issues:
+
+# Missing artifact source configuration
+artifacts:
+  primary:
+    primaryArtifactRef: <+input>
+    # Missing: sources: [...]
+
+# Invalid manifest store type
+store:
+  type: github  # Wrong (case-sensitive)
+  type: Github  # Correct
+
+# Wrong deployment type
+serviceDefinition:
+  type: kubernetes  # Wrong
+  type: Kubernetes  # Correct
+```
+
+## Troubleshooting
+
+### Service Not Appearing in Pipeline
+
+1. **Check service scope:**
+   - Verify service is in same project
+   - For org/account services, use proper prefix
+
+2. **Verify service is saved:**
+   - Check for validation errors
+   - Confirm service appears in Services list
+
+### Artifact Resolution Failures
+
+1. **Check connector credentials:**
+   - Verify registry connector is valid
+   - Test connector connectivity
+
+2. **Verify artifact path:**
+   - Check image path is correct
+   - Verify tag exists in registry
+
+3. **Check permissions:**
+   - Ensure connector has pull permissions
+   - Verify registry access from delegates
+
+### Manifest Fetch Failures
+
+1. **Git connectivity:**
+   - Verify Git connector is valid
+   - Check repository exists and is accessible
+
+2. **Path verification:**
+   - Confirm manifest paths exist
+   - Check file names match exactly
+
+3. **Branch/tag issues:**
+   - Verify branch exists
+   - Check for case sensitivity
+
+### Values Override Issues
+
+```yaml
+# Debug values resolution
+valuesPaths:
+  - values.yaml
+  - values-<+env.name>.yaml  # Check env.name resolves correctly
+```
+
 ## Instructions
 
 When creating a service:

@@ -27,7 +27,7 @@ The v1 pipeline format is a simplified, more intuitive YAML syntax that is also 
 
 ## Schema Reference
 
-Schema source: https://github.com/thisrohangupta/spec
+Schema source: https://github.com/harness/harness-schema/tree/main/v1
 
 ## Pipeline Structure
 
@@ -954,6 +954,202 @@ template:
         repo: ${{ inputs.registry }}/myapp
         tags: ${{ inputs.version }}
 ```
+
+## API Reference
+
+### Create v1 Pipeline via API
+
+**Endpoint:** `POST /v1/orgs/{org}/projects/{project}/pipelines`
+
+```bash
+curl -X POST 'https://app.harness.io/v1/orgs/default/projects/my_project/pipelines' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID' \
+  -d 'pipeline:
+  inputs:
+    version:
+      type: string
+      default: "1.0.0"
+  stages:
+  - id: build
+    runtime: cloud
+    steps:
+    - run: npm ci
+    - run: npm test
+    - run: npm run build'
+```
+
+### Update v1 Pipeline
+
+**Endpoint:** `PUT /v1/orgs/{org}/projects/{project}/pipelines/{pipeline}`
+
+```bash
+curl -X PUT 'https://app.harness.io/v1/orgs/default/projects/my_project/pipelines/my_pipeline' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID' \
+  -d '<updated_pipeline_yaml>'
+```
+
+### Get Pipeline
+
+**Endpoint:** `GET /v1/orgs/{org}/projects/{project}/pipelines/{pipeline}`
+
+```bash
+curl -X GET 'https://app.harness.io/v1/orgs/default/projects/my_project/pipelines/my_pipeline' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID'
+```
+
+### Execute Pipeline
+
+**Endpoint:** `POST /v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/execute`
+
+```bash
+curl -X POST 'https://app.harness.io/v1/orgs/default/projects/my_project/pipelines/my_pipeline/execute' \
+  -H 'Content-Type: application/json' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -H 'Harness-Account: YOUR_ACCOUNT_ID' \
+  -d '{
+    "inputs": {
+      "version": "2.0.0"
+    }
+  }'
+```
+
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_YAML` | YAML syntax error | Validate YAML syntax, check indentation |
+| `INVALID_EXPRESSION` | Invalid `${{ }}` expression | Check expression syntax and variable names |
+| `SERVICE_NOT_FOUND` | Referenced service doesn't exist | Create service or fix service reference |
+| `ENVIRONMENT_NOT_FOUND` | Referenced environment doesn't exist | Create environment or fix reference |
+| `ACTION_NOT_FOUND` | Unknown action in `uses:` | Check available actions, verify spelling |
+
+### Expression Errors
+
+```yaml
+# Common expression mistakes:
+
+# Wrong: Missing closing braces
+${{ inputs.version }   # Error
+${{ inputs.version }}  # Correct
+
+# Wrong: Invalid context reference
+${{ input.version }}   # Error (should be 'inputs')
+${{ inputs.version }}  # Correct
+
+# Wrong: Accessing undefined step output
+${{ steps.unknown.outputs.value }}  # Error
+${{ steps.build.outputs.value }}    # Correct (after step 'build' runs)
+```
+
+### Runtime Errors
+
+```yaml
+# Invalid runtime configuration
+stages:
+- runtime:
+    kubernetes:
+      # Missing required 'connector' field
+      namespace: build-ns
+  steps:
+  - run: echo "test"
+
+# Correct
+stages:
+- runtime:
+    kubernetes:
+      connector: k8s_connector
+      namespace: build-ns
+  steps:
+  - run: echo "test"
+```
+
+## Troubleshooting
+
+### Pipeline Won't Execute
+
+1. **Check inputs are provided:**
+   ```yaml
+   inputs:
+     version:
+       type: string
+       required: true  # Must be provided at execution
+   ```
+
+2. **Verify runtime configuration:**
+   - For `runtime: cloud`, ensure Harness Cloud is enabled
+   - For Kubernetes runtime, verify connector and namespace
+
+3. **Check conditional expressions:**
+   ```yaml
+   if: ${{ branch == "main" }}  # Verify context is available
+   ```
+
+### Steps Not Running
+
+1. **Check step conditions:**
+   ```yaml
+   - if: ${{ success() }}  # Only runs if previous steps succeeded
+     run: echo "deploy"
+   ```
+
+2. **Verify parallel execution:**
+   - Steps in `parallel:` run concurrently
+   - Steps in `group:` run sequentially
+
+### Caching Not Working
+
+1. **Verify cache key:**
+   ```yaml
+   cache:
+     path: node_modules
+     key: npm-${{ hashFiles('package-lock.json') }}  # Ensure file exists
+   ```
+
+2. **Check cache path:**
+   - Path must be relative to workspace
+   - Directory must exist after step execution
+
+### Matrix Strategy Issues
+
+1. **Check matrix syntax:**
+   ```yaml
+   strategy:
+     matrix:
+       node: ["16", "18", "20"]  # Use proper array syntax
+       os: [ubuntu-latest, macos-latest]
+   ```
+
+2. **Verify matrix references:**
+   ```yaml
+   - run: node --version
+     container: node:${{ matrix.node }}  # Reference must match matrix key
+   ```
+
+### CD Stage Failures
+
+1. **Verify service and environment exist:**
+   - Service must be defined in Harness
+   - Environment and infrastructure must be configured
+
+2. **Check action availability:**
+   ```yaml
+   - action:
+       uses: kubernetes-rolling-deploy  # Verify action name is correct
+   ```
+
+3. **Verify rollback steps:**
+   ```yaml
+   rollback:
+   - action:
+       uses: kubernetes-rollback  # Must match deployment type
+   ```
 
 ## Instructions
 

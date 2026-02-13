@@ -1191,6 +1191,40 @@ curl -X POST \
                     command: echo "Hello"'
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing required fields | Validate YAML syntax and ensure all required fields are present |
+| `DUPLICATE_IDENTIFIER` | Pipeline with same identifier exists | Use unique identifier or update existing pipeline |
+| `INVALID_IDENTIFIER` | Identifier doesn't match pattern | Use pattern: `^[a-zA-Z_][0-9a-zA-Z_]{0,127}$` |
+| `CONNECTOR_NOT_FOUND` | Referenced connector doesn't exist | Create connector or fix connectorRef |
+| `SERVICE_NOT_FOUND` | Referenced service doesn't exist | Create service or fix serviceRef |
+| `ENVIRONMENT_NOT_FOUND` | Referenced environment doesn't exist | Create environment or fix environmentRef |
+
+### YAML Validation Errors
+
+```yaml
+# Common validation issues:
+
+# Invalid identifier (must start with letter or underscore)
+identifier: 123_pipeline  # Wrong
+identifier: pipeline_123  # Correct
+
+# Invalid stage type
+type: ci  # Wrong (case-sensitive)
+type: CI  # Correct
+
+# Missing required spec field
+- stage:
+    identifier: build
+    name: Build
+    type: CI
+    # Missing: spec: {...}
+```
+
 ### Common API Errors
 
 | Status | Code | Cause | Solution |
@@ -1200,6 +1234,70 @@ curl -X POST \
 | 401 | `UNAUTHORIZED` | Invalid or missing API key | Check API key is valid |
 | 403 | `ACCESS_DENIED` | Insufficient permissions | Verify user has pipeline create permissions |
 | 404 | `NOT_FOUND` | Org or project not found | Check org/project identifiers |
+
+## Troubleshooting
+
+### Pipeline Won't Execute
+
+1. **Check required inputs are provided:**
+   - Verify all `<+input>` fields have values
+   - Use input sets for pre-defined values
+
+2. **Verify stage dependencies:**
+   - Check `when` conditions are met
+   - Ensure referenced stages exist
+
+3. **Check connector status:**
+   - Verify connectors are valid and accessible
+   - Test connector connectivity in Harness UI
+
+### CI Stage Failures
+
+1. **Clone issues:**
+   - Verify Git connector has correct permissions
+   - Check repository name and branch exist
+   - Ensure codebase configuration is correct
+
+2. **Build step failures:**
+   - Check container image is accessible
+   - Verify shell commands are correct
+   - Review resource limits (memory/CPU)
+
+3. **Runtime issues:**
+   - For Cloud runtime, ensure Harness Cloud is enabled
+   - For K8s runtime, verify cluster connectivity
+
+### CD Stage Failures
+
+1. **Service resolution:**
+   - Verify service exists and is accessible
+   - Check artifact sources are configured
+
+2. **Environment issues:**
+   - Verify environment exists
+   - Check infrastructure definitions are valid
+
+3. **Deployment failures:**
+   - Review Kubernetes manifests
+   - Check namespace permissions
+   - Verify rollback steps are configured
+
+### Expression Errors
+
+```yaml
+# Debug expressions by using outputVariables
+- step:
+    identifier: debug
+    type: Run
+    spec:
+      shell: Bash
+      command: |
+        echo "Pipeline ID: <+pipeline.identifier>"
+        echo "Stage: <+stage.identifier>"
+      outputVariables:
+        - name: debug_output
+          type: String
+```
 
 ### Workflow: Generate and Create
 

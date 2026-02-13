@@ -499,6 +499,92 @@ overlayInputSet:
     - canary_enabled
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `INVALID_REQUEST` | Malformed YAML or missing fields | Validate YAML structure |
+| `DUPLICATE_IDENTIFIER` | Input set with same ID exists | Use unique identifier |
+| `PIPELINE_NOT_FOUND` | Referenced pipeline doesn't exist | Verify pipeline identifier |
+| `INVALID_INPUT_SET_YAML` | Input set doesn't match pipeline structure | Align structure with pipeline |
+| `MISSING_REQUIRED_INPUTS` | Pipeline has required inputs not in set | Add all required input values |
+
+### Validation Errors
+
+```yaml
+# Common input set validation issues:
+
+# Pipeline identifier mismatch
+inputSet:
+  identifier: my_inputs
+  pipeline:
+    identifier: wrong_pipeline  # Must match actual pipeline
+
+# Invalid structure - doesn't match pipeline
+pipeline:
+  stages:
+    - stage:
+        identifier: build  # Must match pipeline stage identifier
+        type: Deployment  # Must match pipeline stage type
+
+# Invalid variable type
+pipeline:
+  variables:
+    - name: count
+      type: Number
+      value: "five"  # Wrong - should be numeric
+```
+
+## Troubleshooting
+
+### Input Set Not Applying
+
+1. **Verify pipeline reference:**
+   - Check input set belongs to correct pipeline
+   - Ensure pipeline identifier matches exactly
+
+2. **Check structure alignment:**
+   - Stage identifiers must match
+   - Variable names must match exactly
+
+3. **Validate input values:**
+   - Check value types are correct
+   - Ensure required fields have values
+
+### Overlay Input Set Issues
+
+1. **Reference order matters:**
+   ```yaml
+   inputSetReferences:
+     - base_config      # Applied first
+     - env_config       # Applied second (overrides base)
+   ```
+
+2. **Verify all references exist:**
+   - Check each referenced input set exists
+   - Verify all are for the same pipeline
+
+### Input Set Merge Failures
+
+1. **Conflicting values:**
+   - Later input sets override earlier ones
+   - Check for unintended overrides
+
+2. **Missing required inputs:**
+   - Merged set must provide all required values
+   - Check each input set's contributions
+
+### Execution with Input Sets
+
+```bash
+# Debug by getting merged input set
+curl -X POST \
+  'https://app.harness.io/pipeline/api/inputSets/merge?...' \
+  -d '{"inputSetReferences": ["set1", "set2"], "withMergedPipelineYaml": true}'
+```
+
 ## Instructions
 
 When creating an input set:

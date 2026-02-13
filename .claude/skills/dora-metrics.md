@@ -562,6 +562,101 @@ and identify any patterns
 How do we compare to industry elite performers?
 ```
 
+## Error Handling
+
+### Common Errors
+
+| Error Code | Description | Solution |
+|------------|-------------|----------|
+| `TEAM_NOT_FOUND` | Team doesn't exist in SEI | Verify team ID and configuration |
+| `NO_DATA_AVAILABLE` | No metrics data for period | Extend time period or check integrations |
+| `INTEGRATION_ERROR` | Data source disconnected | Verify tool integrations |
+| `INSUFFICIENT_DATA` | Not enough data points | Need more deployments/commits for metrics |
+| `PROFILE_NOT_FOUND` | Invalid profile reference | Check profile identifier |
+
+### MCP Tool Errors
+
+```
+# Common MCP tool issues:
+
+# SEI tools not available
+Error: Tool 'sei_deployment_frequency' not found
+→ Ensure 'sei' toolset is enabled in MCP server config
+
+# No SEI data
+Error: No deployment data found
+→ Verify CI/CD integrations configured in SEI
+
+# Invalid time period
+Error: Invalid time_period parameter
+→ Use valid periods: LAST_7_DAYS, LAST_30_DAYS, LAST_QUARTER
+```
+
+## Troubleshooting
+
+### No DORA Metrics Data
+
+1. **Check integrations:**
+   - Verify CI/CD tools connected (Jenkins, GitHub Actions, etc.)
+   - Check deployment tracking configured
+   - Ensure incident management linked
+
+2. **Data collection:**
+   - Allow time for initial data sync (24-48 hours)
+   - Verify deployment events being captured
+   - Check commit/PR data flowing
+
+3. **Team configuration:**
+   - Ensure team has members assigned
+   - Verify members linked to tool accounts
+   - Check team scope includes relevant repos
+
+### Metrics Not Calculating Correctly
+
+1. **Deployment frequency:**
+   - Check deployment definition (what counts as deploy)
+   - Verify production environment tagged
+   - Ensure deploys reaching production tracked
+
+2. **Lead time:**
+   - Verify commit-to-deploy pipeline tracked
+   - Check all stages captured
+   - Ensure branch mapping correct
+
+3. **Change failure rate:**
+   - Define what constitutes failure
+   - Link incident tracking
+   - Verify rollback detection
+
+4. **MTTR:**
+   - Connect incident management
+   - Define incident resolution criteria
+   - Track remediation deployments
+
+### Team Data Issues
+
+1. **Missing team members:**
+   - Verify user identities linked
+   - Check email/username mapping
+   - Ensure contributors included
+
+2. **Cross-team attribution:**
+   - Review team boundaries
+   - Check repository assignments
+   - Verify code ownership
+
+### Historical Data Gaps
+
+1. **Integration timing:**
+   - Data only available after integration
+   - Historical import may be limited
+   - Check integration start date
+
+2. **Data retention:**
+   - Review retention policies
+   - Check if data has aged out
+   - Verify backup availability
+
 ## Instructions
 
 When generating DORA metrics reports:
