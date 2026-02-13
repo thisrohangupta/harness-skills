@@ -145,6 +145,39 @@ Create a GitHub webhook trigger that:
 - `AmazonS3` - S3 bucket artifacts
 - `Nexus3Registry` - Nexus Repository
 
+### `/create-agent-template`
+
+Generate Harness Agent Template files for AI-powered automation agents.
+
+**Capabilities:**
+- Code Review Agents - AI-powered PR review and commenting
+- Test Generator Agents - Automated unit test generation
+- Security Scanner Agents - Vulnerability detection and reporting
+- Documentation Agents - Auto-generated documentation
+
+**Example Usage:**
+
+```
+/create-agent-template
+
+Create a code review agent that:
+- Reviews pull request changes
+- Comments on code quality issues
+- Suggests improvements
+- Supports GitHub, GitLab, and Bitbucket
+```
+
+**Generated Files:**
+- `metadata.json` - Template metadata and versioning
+- `pipeline.yaml` - Pipeline definition (v1 syntax)
+- `wiki.MD` - User-facing documentation
+
+**Common Patterns:**
+- SCM provider detection (multi-provider support)
+- PR creation with branch management
+- AI coding agent integration
+- Secret and connector handling
+
 ## Schema Reference
 
 All pipelines follow the Harness v0 schema:
@@ -156,23 +189,26 @@ https://github.com/harness/harness-schema/tree/main/v0
 harness-skills/
 ├── .claude/
 │   └── skills/
-│       ├── create-pipeline.md    # v0 Pipeline skill
-│       ├── create-pipeline-v1.md # v1 Pipeline skill (NEW)
-│       ├── create-template.md    # Template skill
-│       └── create-trigger.md     # Trigger skill
+│       ├── create-pipeline.md       # v0 Pipeline skill
+│       ├── create-pipeline-v1.md    # v1 Pipeline skill
+│       ├── create-template.md       # Template skill
+│       ├── create-trigger.md        # Trigger skill
+│       └── create-agent-template.md # Agent Template skill
 ├── examples/
-│   ├── v0/                       # v0 format examples
+│   ├── v0/                          # v0 format examples
 │   │   └── python-flask-cicd.yaml
-│   ├── v1/                       # v1 format examples (NEW)
+│   ├── v1/                          # v1 format examples
 │   │   └── nodejs-cicd.yaml
 │   ├── templates/
 │   │   ├── docker-build-push-step.yaml
 │   │   └── k8s-blue-green-stage.yaml
-│   └── triggers/
-│       └── github-cicd-triggers.yaml
-├── skills/
-│   └── create-pipeline/
-│       └── create-pipeline.md
+│   ├── triggers/
+│   │   └── github-cicd-triggers.yaml
+│   └── agents/                      # Agent template examples
+│       └── code-review-agent/
+│           ├── metadata.json
+│           ├── pipeline.yaml
+│           └── wiki.MD
 ├── CLAUDE.md
 ├── LICENSE
 └── README.md
@@ -194,6 +230,9 @@ See the `examples/` directory for complete examples:
 
 **Triggers:**
 - **triggers/github-cicd-triggers.yaml** - PR, push, release, and scheduled triggers
+
+**Agent Templates:**
+- **agents/code-review-agent/** - AI-powered code review agent with PR commenting
 
 ## License
 

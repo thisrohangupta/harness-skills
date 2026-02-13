@@ -1,0 +1,133 @@
+# Code Review Agent Pipeline
+#
+# AI-powered code review agent that:
+# - Analyzes pull request changes
+# - Identifies code quality issues
+# - Suggests improvements
+# - Posts review comments on the PR
+#
+# Supports: GitHub, GitLab, Bitbucket, Harness Code
+
+version: 1
+pipeline:
+  clone:
+    depth: 1000
+    ref:
+      type: pull-request
+      number: <+inputs.pullReq>
+    repo: <+inputs.repo>
+
+  stages:
+    - name: code-review
+      steps:
+        # Step 1: Generate review task from PR diff
+        - name: generate_review_task
+          run:
+            container:
+              image: harness/ai-review-generator:latest
+            with:
+              output_file: /harness/review/task.txt
+              review_output_file: /harness/review/review.json
+              working_directory: /harness
+              review_focus: <+inputs.reviewFocus>
+            env:
+              ANTHROPIC_API_KEY: <+inputs.llmConnector.token>
+
+        # Step 2: Run AI coding agent for deep analysis
+        - name: ai_analysis
+          run:
+            container:
+              image: harness/coding-agent:latest
+            with:
+              detailed_logging: "true"
+              max_iterations: "50"
+              task_file_path: /harness/review/task.txt
+              working_directory: /harness
+            env:
+              ANTHROPIC_API_KEY: <+inputs.llmConnector.token>
+
+        # Step 3: Detect SCM provider for multi-platform support
+        - name: detect_scm_provider
+          run:
+            shell: bash
+            script: |-
+              SCM_PROVIDER="${DRONE_REPO_SCM}"
+              if [ "$SCM_PROVIDER" = "Git" ]; then
+                SCM_PROVIDER="harness"
+              fi
+              SCM_PROVIDER=$(echo "$SCM_PROVIDER" | tr '[:upper:]' '[:lower:]')
+
+              if [ "$SCM_PROVIDER" = "harness" ]; then
+                if [ -n "$HARNESS_API_KEY" ]; then
+                  TOKEN="${HARNESS_API_KEY}"
+                else
+                  TOKEN="${SCM_TOKEN}"
+                fi
+                NETRC_USERNAME="${DRONE_NETRC_USERNAME}"
+                NETRC_PASSWORD="${DRONE_NETRC_PASSWORD}"
+              else
+                if [ -n "$DRONE_REPO_LINK" ]; then
+                  NETRC_USERNAME=$(echo "$DRONE_REPO_LINK" | sed -E 's|https?://[^/]+/([^/]+)/.*|\1|')
+                else
+                  NETRC_USERNAME="${DRONE_NETRC_USERNAME}"
+                fi
+                TOKEN="${SCM_TOKEN}"
+                NETRC_PASSWORD="${SCM_TOKEN}"
+              fi
+
+              BASE_URL="${DRONE_SYSTEM_PROTO}://${DRONE_SYSTEM_HOST}"
+
+              echo "SCM_PROVIDER=$SCM_PROVIDER" >> $DRONE_OUTPUT
+              echo "TOKEN=$TOKEN" >> $HARNESS_OUTPUT_SECRET_FILE
+              echo "NETRC_USERNAME=$NETRC_USERNAME" >> $DRONE_OUTPUT
+              echo "NETRC_PASSWORD=$NETRC_PASSWORD" >> $HARNESS_OUTPUT_SECRET_FILE
+              echo "BASE_URL=$BASE_URL" >> $DRONE_OUTPUT
+            env:
+              HARNESS_API_KEY: <+inputs.harnessKey>
+              SCM_TOKEN: <+inputs.gitConnector.token>
+
+        # Step 4: Post review comments to PR
+        - name: post_review_comments
+          run:
+            container:
+              image: harness/pr-comment-plugin:latest
+            with:
+              comments_file: /harness/review/review.json
+              comment_type: review
+            env:
+              PLUGIN_SCM_PROVIDER: <+pipeline.stages.code-review.steps.detect_scm_provider.output.outputVariables.SCM_PROVIDER>
+              PLUGIN_TOKEN: <+pipeline.stages.code-review.steps.detect_scm_provider.output.outputVariables.TOKEN>
+              PLUGIN_REPO: ${{inputs.repo}}
+              PLUGIN_PR_NUMBER: ${{inputs.pullReq}}
+              PLUGIN_HARNESS_ACCOUNT_ID: <+env.HARNESS_ACCOUNT_ID>
+              PLUGIN_HARNESS_ORG_ID: <+env.HARNESS_ORG_ID>
+              PLUGIN_HARNESS_PROJECT_ID: <+env.HARNESS_PROJECT_ID>
+              PLUGIN_HARNESS_BASE_URL: <+pipeline.stages.code-review.steps.detect_scm_provider.output.outputVariables.BASE_URL>
+
+      platform:
+        os: linux
+        arch: arm64
+
+  inputs:
+    llmConnector:
+      type: connector
+      description: LLM connector (Anthropic, OpenAI, etc.)
+    harnessKey:
+      type: secret
+      default: account.harness_api_key
+      description: Harness API key for Harness Code repos
+    gitConnector:
+      type: connector
+      description: Git connector for repository access
+    repo:
+      type: string
+      required: true
+      description: Repository in format org/repo
+    pullReq:
+      type: string
+      required: true
+      description: Pull request number to review
+    reviewFocus:
+      type: string
+      default: general
+      description: Review focus (general, security, performance, style)

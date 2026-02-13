@@ -71,7 +71,23 @@ Generate Harness.io v0 Trigger YAML files to automatically start pipelines. This
 - "Create an ECR trigger to deploy when new images are pushed"
 - "Build a release trigger for production deployments on tags"
 
-## Schema Reference
+### /create-agent-template
 
-All skills follow the Harness v0 schema specification:
-https://github.com/harness/harness-schema/tree/main/v0
+Generate Harness Agent Template files for AI-powered automation agents. This skill creates:
+
+- **metadata.json** - Template metadata and versioning
+- **pipeline.yaml** - Pipeline definition (v1 syntax)
+- **wiki.MD** - User-facing documentation
+
+**Usage:** `/create-agent-template` or ask Claude to create an agent template
+
+**Examples:**
+- "Create an agent template for code review"
+- "Generate a security scanner agent"
+- "Create a documentation generator agent"
+
+## Schema References
+
+- **v0 Pipelines/Templates/Triggers**: https://github.com/harness/harness-schema/tree/main/v0
+- **v1 Pipelines**: https://github.com/thisrohangupta/spec
+- **Agent Templates**: https://github.com/thisrohangupta/agents

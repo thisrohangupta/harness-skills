@@ -1,0 +1,5 @@
+{
+  "name": "Code Review",
+  "description": "AI-powered agent that reviews code changes and provides feedback on pull requests",
+  "version": "1.0.0"
+}
