@@ -86,6 +86,20 @@ Generate Harness Agent Template files for AI-powered automation agents. This ski
 - "Generate a security scanner agent"
 - "Create a documentation generator agent"
 
+### /template-usage
+
+Get template reference entities and usage information using the Harness API. Find which pipelines or other templates are using a specific v0 template.
+
+**Usage:** `/template-usage` or ask Claude who is using a template
+
+**Examples:**
+- "Which pipelines are using the docker-build-push template?"
+- "Show me the impact of updating the k8s-deploy template"
+- "Find unused templates in the account"
+- "What version of ci-stage template are projects using?"
+
+**API Reference:** https://apidocs.harness.io/templates/listtemplateusage
+
 ## MCP-Powered Skills
 
 These skills leverage the Harness MCP Server for enhanced functionality. Install the MCP server from https://github.com/harness/mcp-server

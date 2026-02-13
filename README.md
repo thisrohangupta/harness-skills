@@ -178,6 +178,28 @@ Create a code review agent that:
 - AI coding agent integration
 - Secret and connector handling
 
+### `/template-usage`
+
+Get template reference entities and usage information using the Harness API.
+
+**Capabilities:**
+- Find which pipelines use a specific template
+- Analyze impact before updating templates
+- Track template adoption across projects
+- Identify unused templates for cleanup
+
+**Example Usage:**
+
+```
+/template-usage
+
+Which pipelines are using the docker-build-push template?
+Show me the impact analysis for updating it.
+```
+
+**API:** `GET /template/api/templates/entitySetupUsage/{templateIdentifier}`
+**Docs:** https://apidocs.harness.io/templates/listtemplateusage
+
 ## MCP-Powered Skills
 
 These skills leverage the [Harness MCP Server](https://github.com/harness/mcp-server) for enhanced functionality. Install and configure the MCP server to enable these skills.
@@ -409,6 +431,7 @@ harness-skills/
 │       ├── create-template.md       # Template skill
 │       ├── create-trigger.md        # Trigger skill
 │       ├── create-agent-template.md # Agent Template skill
+│       ├── template-usage.md        # Template references API
 │       ├── debug-pipeline.md        # MCP: Pipeline debugging
 │       ├── run-pipeline.md          # MCP: Pipeline execution
 │       ├── analyze-costs.md         # MCP: Cost analysis
