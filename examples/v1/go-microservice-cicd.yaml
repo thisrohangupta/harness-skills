@@ -1,0 +1,175 @@
+# Go Microservice CI/CD Pipeline (v1 Syntax)
+# Simplified YAML using v1 pipeline format
+
+version: 1
+kind: pipeline
+spec:
+  name: Go Microservice CI/CD
+  identifier: go_microservice_cicd
+  description: CI/CD pipeline for Go microservices using v1 syntax
+
+  inputs:
+    service_name:
+      type: string
+      default: user-service
+      description: Name of the Go service
+    go_version:
+      type: string
+      default: "1.21"
+      description: Go version to use
+
+  repository:
+    connector: github_connector
+    name: go-microservices
+
+  stages:
+    - name: Build and Test
+      type: ci
+      spec:
+        platform:
+          os: linux
+          arch: amd64
+        steps:
+          - name: Setup Go
+            run: |
+              go version
+              go mod download
+            env:
+              GOPROXY: https://proxy.golang.org,direct
+
+          - name: Lint
+            run: |
+              go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+              golangci-lint run ./...
+
+          - name: Test
+            run: |
+              go test -v -race -coverprofile=coverage.out ./...
+              go tool cover -html=coverage.out -o coverage.html
+            reports:
+              - type: junit
+                path: test-results.xml
+
+          - name: Build
+            run: |
+              CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o bin/${{ inputs.service_name }} ./cmd/main.go
+
+          - name: Build Docker Image
+            type: build-push
+            spec:
+              connector: dockerhub_connector
+              repo: myorg/${{ inputs.service_name }}
+              tags:
+                - ${{ commit.sha }}
+                - ${{ pipeline.sequence_id }}
+              dockerfile: Dockerfile
+              context: .
+
+    - name: Security Scan
+      type: ci
+      when: ${{ stage.Build and Test.status }} == "success"
+      spec:
+        steps:
+          - name: Trivy Scan
+            run: |
+              trivy image --severity HIGH,CRITICAL myorg/${{ inputs.service_name }}:${{ commit.sha }}
+
+          - name: Gosec Scan
+            run: |
+              go install github.com/securego/gosec/v2/cmd/gosec@latest
+              gosec -fmt json -out gosec-results.json ./...
+
+    - name: Deploy Dev
+      type: cd
+      spec:
+        environment: dev
+        infrastructure: k8s_dev
+        service: ${{ inputs.service_name }}
+        strategy:
+          type: rolling
+        steps:
+          - name: Deploy
+            type: k8s-rolling
+
+          - name: Health Check
+            type: http
+            spec:
+              url: http://${{ inputs.service_name }}-dev.internal/healthz
+              method: GET
+              assertion: ${{ response.code }} == 200
+
+    - name: Deploy Staging
+      type: cd
+      when: ${{ branch }} == "main"
+      spec:
+        environment: staging
+        infrastructure: eks_staging
+        service: ${{ inputs.service_name }}
+        strategy:
+          type: rolling
+        steps:
+          - name: Deploy
+            type: k8s-rolling
+
+          - name: Integration Tests
+            run: |
+              go test -v -tags=integration ./tests/integration/...
+
+    - name: Production Approval
+      type: approval
+      when: ${{ branch }} == "main"
+      spec:
+        approvers:
+          groups:
+            - prod_approvers
+          min_count: 2
+        message: |
+          Approve deployment of ${{ inputs.service_name }} to production?
+          Commit: ${{ commit.sha }}
+
+    - name: Deploy Production
+      type: cd
+      spec:
+        environment: prod
+        infrastructure: eks_prod_east
+        service: ${{ inputs.service_name }}
+        strategy:
+          type: canary
+          spec:
+            phases:
+              - weight: 10
+                duration: 5m
+                verification:
+                  type: prometheus
+                  query: |
+                    sum(rate(http_requests_total{service="${{ inputs.service_name }}",status=~"5.."}[5m])) / sum(rate(http_requests_total{service="${{ inputs.service_name }}"}[5m])) < 0.01
+              - weight: 50
+                duration: 10m
+              - weight: 100
+        steps:
+          - name: Deploy Canary
+            type: k8s-canary
+
+          - name: Verify
+            type: verify
+            spec:
+              duration: 5m
+              sensitivity: medium
+
+          - name: Promote
+            type: k8s-canary-promote
+
+  notifications:
+    - name: Slack
+      on:
+        - pipeline_failed
+        - pipeline_success
+      slack:
+        webhook: ${{ secrets.slack_webhook }}
+        channel: "#deployments"
+
+    - name: PagerDuty
+      on:
+        - pipeline_failed
+      pagerduty:
+        key: ${{ secrets.pagerduty_key }}

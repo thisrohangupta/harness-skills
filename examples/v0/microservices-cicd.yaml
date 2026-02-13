@@ -1,0 +1,403 @@
+# Microservices CI/CD Pipeline Example
+# Complete pipeline with build, test, security scan, and multi-environment deployment
+
+pipeline:
+  identifier: microservices_cicd
+  name: Microservices CI/CD Pipeline
+  description: Full CI/CD pipeline for microservices with security scanning and approvals
+  projectIdentifier: ecommerce
+  orgIdentifier: default
+  tags:
+    team: platform
+    type: cicd
+  properties:
+    ci:
+      codebase:
+        connectorRef: github_connector
+        repoName: backend-api
+        build:
+          type: branch
+          spec:
+            branch: <+trigger.branch>
+        depth: 50
+        prCloneStrategy: MergeCommit
+
+  variables:
+    - name: service_name
+      type: String
+      default: backend-api
+      description: Name of the service being deployed
+    - name: docker_repo
+      type: String
+      default: myorg/backend-api
+      description: Docker repository path
+
+  stages:
+    # CI Stage - Build and Test
+    - stage:
+        identifier: build
+        name: Build and Test
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          caching:
+            enabled: true
+            paths:
+              - node_modules
+          execution:
+            steps:
+              - step:
+                  identifier: install
+                  name: Install Dependencies
+                  type: Run
+                  spec:
+                    shell: Bash
+                    command: npm ci
+                  timeout: 5m
+
+              - parallel:
+                  - step:
+                      identifier: lint
+                      name: Lint
+                      type: Run
+                      spec:
+                        shell: Bash
+                        command: npm run lint
+                  - step:
+                      identifier: unit_test
+                      name: Unit Tests
+                      type: Run
+                      spec:
+                        shell: Bash
+                        command: npm run test:unit -- --coverage
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - "coverage/junit.xml"
+
+              - step:
+                  identifier: integration_test
+                  name: Integration Tests
+                  type: Run
+                  spec:
+                    shell: Bash
+                    command: npm run test:integration
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - "test-results/integration.xml"
+
+              - step:
+                  identifier: build_image
+                  name: Build and Push Docker Image
+                  type: BuildAndPushDockerRegistry
+                  spec:
+                    connectorRef: dockerhub_connector
+                    repo: <+pipeline.variables.docker_repo>
+                    tags:
+                      - <+codebase.commitSha>
+                      - <+pipeline.sequenceId>
+                      - latest
+                    dockerfile: Dockerfile
+                    context: .
+                    optimize: true
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: MarkAsFailure
+
+    # Security Scan Stage
+    - stage:
+        identifier: security_scan
+        name: Security Scan
+        type: CI
+        spec:
+          cloneCodebase: false
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  identifier: container_scan
+                  name: Container Security Scan
+                  type: AquaTrivy
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      type: container
+                      detection: auto
+                    advanced:
+                      log:
+                        level: info
+                    privileged: true
+                    image:
+                      type: docker_v2
+                      name: <+pipeline.variables.docker_repo>
+                      tag: <+codebase.commitSha>
+                    sbom:
+                      format: spdx-json
+        when:
+          pipelineStatus: Success
+
+    # Deploy to Development
+    - stage:
+        identifier: deploy_dev
+        name: Deploy to Development
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: <+pipeline.variables.service_name>
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: docker_image
+                      sources:
+                        - identifier: docker_image
+                          type: DockerRegistry
+                          spec:
+                            tag: <+codebase.commitSha>
+          environment:
+            environmentRef: dev
+            infrastructureDefinitions:
+              - identifier: k8s_dev
+          execution:
+            steps:
+              - step:
+                  identifier: rollout
+                  name: Rollout Deployment
+                  type: K8sRollingDeploy
+                  spec:
+                    skipDryRun: false
+                  timeout: 10m
+              - step:
+                  identifier: health_check
+                  name: Health Check
+                  type: Http
+                  spec:
+                    url: http://<+service.name>-dev.internal/health
+                    method: GET
+                    assertion: <+httpResponseCode> == 200
+                  timeout: 2m
+            rollbackSteps:
+              - step:
+                  identifier: rollback
+                  name: Rollback
+                  type: K8sRollingRollback
+                  spec: {}
+                  timeout: 10m
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+
+    # Deploy to Staging
+    - stage:
+        identifier: deploy_staging
+        name: Deploy to Staging
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: <+pipeline.variables.service_name>
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: docker_image
+                      sources:
+                        - identifier: docker_image
+                          type: DockerRegistry
+                          spec:
+                            tag: <+codebase.commitSha>
+          environment:
+            environmentRef: staging
+            infrastructureDefinitions:
+              - identifier: eks_staging
+          execution:
+            steps:
+              - step:
+                  identifier: rollout
+                  name: Rollout Deployment
+                  type: K8sRollingDeploy
+                  spec:
+                    skipDryRun: false
+                  timeout: 10m
+              - step:
+                  identifier: smoke_test
+                  name: Smoke Tests
+                  type: Run
+                  spec:
+                    connectorRef: dockerhub_connector
+                    image: postman/newman:latest
+                    shell: Sh
+                    command: |
+                      newman run tests/smoke.postman_collection.json \
+                        --env-var "base_url=http://<+service.name>-staging.internal"
+            rollbackSteps:
+              - step:
+                  identifier: rollback
+                  name: Rollback
+                  type: K8sRollingRollback
+                  spec: {}
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.targetBranch> == "main"
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+
+    # Production Approval
+    - stage:
+        identifier: prod_approval
+        name: Production Approval
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: approval
+                  name: Approve Production Deploy
+                  type: HarnessApproval
+                  spec:
+                    approvalMessage: |
+                      Please approve deployment to production.
+
+                      Service: <+pipeline.variables.service_name>
+                      Version: <+codebase.commitSha>
+                      Branch: <+trigger.branch>
+                    approvers:
+                      userGroups:
+                        - prod_approvers
+                      minimumCount: 2
+                      disallowPipelineExecutor: true
+                    includePipelineExecutionHistory: true
+                  timeout: 1d
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.targetBranch> == "main"
+
+    # Deploy to Production (Canary)
+    - stage:
+        identifier: deploy_prod
+        name: Deploy to Production
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: <+pipeline.variables.service_name>
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: docker_image
+                      sources:
+                        - identifier: docker_image
+                          type: DockerRegistry
+                          spec:
+                            tag: <+codebase.commitSha>
+          environment:
+            environmentRef: prod
+            infrastructureDefinitions:
+              - identifier: eks_prod_east
+          execution:
+            steps:
+              - step:
+                  identifier: canary_deploy
+                  name: Canary Deployment (10%)
+                  type: K8sCanaryDeploy
+                  spec:
+                    instanceSelection:
+                      type: Percentage
+                      spec:
+                        percentage: 10
+                    skipDryRun: false
+                  timeout: 10m
+              - step:
+                  identifier: canary_verify
+                  name: Verify Canary
+                  type: Verify
+                  spec:
+                    type: Canary
+                    monitoredService:
+                      type: Default
+                    spec:
+                      sensitivity: MEDIUM
+                      duration: 5m
+                  timeout: 10m
+              - step:
+                  identifier: canary_delete
+                  name: Delete Canary
+                  type: K8sCanaryDelete
+                  spec: {}
+              - step:
+                  identifier: rolling_deploy
+                  name: Rolling Deployment
+                  type: K8sRollingDeploy
+                  spec:
+                    skipDryRun: false
+                  timeout: 10m
+            rollbackSteps:
+              - step:
+                  identifier: canary_rollback
+                  name: Canary Rollback
+                  type: K8sCanaryDelete
+                  spec: {}
+              - step:
+                  identifier: rollback
+                  name: Rolling Rollback
+                  type: K8sRollingRollback
+                  spec: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+
+  notificationRules:
+    - name: Slack Notifications
+      enabled: true
+      pipelineEvents:
+        - type: PipelineFailed
+        - type: PipelineSuccess
+      notificationMethod:
+        type: Slack
+        spec:
+          webhookUrl: <+secrets.getValue("slack_webhook")>
+    - name: Email on Failure
+      enabled: true
+      pipelineEvents:
+        - type: PipelineFailed
+      notificationMethod:
+        type: Email
+        spec:
+          recipients:
+            - platform-team@example.com

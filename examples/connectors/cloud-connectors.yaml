@@ -1,0 +1,120 @@
+# Cloud Provider Connector Examples
+# AWS, GCP, and Azure connector configurations
+
+---
+# AWS Connector - Manual Credentials
+connector:
+  identifier: aws_manual
+  name: AWS Manual Credentials
+  description: AWS connector with access key and secret
+  type: Aws
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        accessKey: AKIAXXXXXXXXXXXXXXXX
+        secretKeyRef: aws_secret_key
+      region: us-east-1
+    delegateSelectors:
+      - harness-delegate
+
+---
+# AWS Connector - IRSA (EKS)
+connector:
+  identifier: aws_irsa
+  name: AWS IRSA
+  description: AWS connector using IAM Roles for Service Accounts
+  type: Aws
+  spec:
+    credential:
+      type: Irsa
+      spec:
+        region: us-east-1
+    delegateSelectors:
+      - eks-delegate
+
+---
+# AWS Connector - Cross Account Assume Role
+connector:
+  identifier: aws_cross_account
+  name: AWS Cross Account
+  description: AWS connector with cross-account role assumption
+  type: Aws
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        accessKey: AKIAXXXXXXXXXXXXXXXX
+        secretKeyRef: aws_secret_key
+      region: us-east-1
+      crossAccountAccess:
+        crossAccountRoleArn: arn:aws:iam::123456789012:role/HarnessCrossAccountRole
+        externalId: harness-external-id-12345
+    delegateSelectors:
+      - harness-delegate
+
+---
+# GCP Connector - Service Account Key
+connector:
+  identifier: gcp_service_account
+  name: GCP Service Account
+  description: GCP connector using service account JSON key
+  type: Gcp
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        secretKeyRef: gcp_service_account_key
+    delegateSelectors:
+      - gcp-delegate
+
+---
+# GCP Connector - Workload Identity
+connector:
+  identifier: gcp_workload_identity
+  name: GCP Workload Identity
+  description: GCP connector using GKE Workload Identity
+  type: Gcp
+  spec:
+    credential:
+      type: InheritFromDelegate
+    delegateSelectors:
+      - gke-delegate
+
+---
+# Azure Connector - Service Principal
+connector:
+  identifier: azure_service_principal
+  name: Azure Service Principal
+  description: Azure connector using service principal credentials
+  type: Azure
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        applicationId: 12345678-1234-1234-1234-123456789012
+        tenantId: 87654321-4321-4321-4321-210987654321
+        auth:
+          type: Secret
+          spec:
+            secretRef: azure_client_secret
+    azureEnvironmentType: AZURE
+    delegateSelectors:
+      - azure-delegate
+
+---
+# Azure Connector - Managed Identity
+connector:
+  identifier: azure_msi
+  name: Azure Managed Identity
+  description: Azure connector using managed identity
+  type: Azure
+  spec:
+    credential:
+      type: InheritFromDelegate
+      spec:
+        auth:
+          type: SystemAssignedManagedIdentity
+    azureEnvironmentType: AZURE
+    delegateSelectors:
+      - aks-delegate

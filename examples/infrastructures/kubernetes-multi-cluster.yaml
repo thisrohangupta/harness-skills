@@ -1,0 +1,111 @@
+# Kubernetes Multi-Cluster Infrastructure Example
+# Infrastructure definitions for dev, staging, and production clusters
+
+---
+# Development Cluster - Direct K8s Connection
+infrastructureDefinition:
+  identifier: k8s_dev
+  name: Kubernetes Development
+  description: Development EKS cluster in us-west-2
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: dev
+  deploymentType: Kubernetes
+  type: KubernetesDirect
+  tags:
+    cluster: dev-eks
+    region: us-west-2
+    cloud: aws
+  spec:
+    connectorRef: k8s_dev_connector
+    namespace: <+service.identifier>-dev
+    releaseName: <+service.identifier>-<+INFRA_KEY_SHORT_ID>
+
+---
+# Staging Cluster - EKS
+infrastructureDefinition:
+  identifier: eks_staging
+  name: EKS Staging
+  description: Staging EKS cluster in us-east-1
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: staging
+  deploymentType: Kubernetes
+  type: KubernetesAws
+  tags:
+    cluster: staging-eks
+    region: us-east-1
+    cloud: aws
+  spec:
+    connectorRef: aws_connector
+    cluster: staging-eks-cluster
+    region: us-east-1
+    namespace: <+service.identifier>
+    releaseName: <+service.identifier>-<+env.identifier>
+
+---
+# Production Cluster - EKS (Primary)
+infrastructureDefinition:
+  identifier: eks_prod_east
+  name: EKS Production US-East
+  description: Production EKS cluster in us-east-1 (primary)
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: prod
+  deploymentType: Kubernetes
+  type: KubernetesAws
+  tags:
+    cluster: prod-eks-east
+    region: us-east-1
+    cloud: aws
+    primary: "true"
+  spec:
+    connectorRef: aws_prod_connector
+    cluster: prod-eks-cluster-east
+    region: us-east-1
+    namespace: <+service.identifier>
+    releaseName: <+service.identifier>-prod
+
+---
+# Production Cluster - EKS (DR/Secondary)
+infrastructureDefinition:
+  identifier: eks_prod_west
+  name: EKS Production US-West
+  description: Production EKS cluster in us-west-2 (DR)
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: prod
+  deploymentType: Kubernetes
+  type: KubernetesAws
+  tags:
+    cluster: prod-eks-west
+    region: us-west-2
+    cloud: aws
+    dr: "true"
+  spec:
+    connectorRef: aws_prod_connector
+    cluster: prod-eks-cluster-west
+    region: us-west-2
+    namespace: <+service.identifier>
+    releaseName: <+service.identifier>-prod
+
+---
+# GKE Production Cluster
+infrastructureDefinition:
+  identifier: gke_prod
+  name: GKE Production
+  description: Production GKE cluster for multi-cloud redundancy
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: prod
+  deploymentType: Kubernetes
+  type: KubernetesGcp
+  tags:
+    cluster: prod-gke
+    region: us-central1
+    cloud: gcp
+  spec:
+    connectorRef: gcp_connector
+    cluster: prod-gke-cluster
+    namespace: <+service.identifier>
+    releaseName: <+service.identifier>-gke

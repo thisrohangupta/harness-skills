@@ -1,0 +1,140 @@
+# Multi-Environment Setup Example
+# Complete dev, staging, and production environment definitions
+
+---
+# Development Environment
+environment:
+  identifier: dev
+  name: Development
+  description: Development environment for feature testing and integration
+  type: PreProduction
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    tier: development
+    team: platform
+    cost_center: engineering
+  variables:
+    - name: LOG_LEVEL
+      type: String
+      value: debug
+    - name: ENABLE_DEBUG_MODE
+      type: String
+      value: "true"
+    - name: REPLICA_COUNT
+      type: Number
+      value: 1
+    - name: DB_HOST
+      type: String
+      value: dev-db.internal.example.com
+    - name: DB_NAME
+      type: String
+      value: ecommerce_dev
+    - name: CACHE_TTL
+      type: Number
+      value: 60
+    - name: FEATURE_FLAGS_ENABLED
+      type: String
+      value: "true"
+
+---
+# Staging Environment
+environment:
+  identifier: staging
+  name: Staging
+  description: Pre-production staging environment for QA and UAT
+  type: PreProduction
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    tier: staging
+    team: platform
+    cost_center: engineering
+  variables:
+    - name: LOG_LEVEL
+      type: String
+      value: info
+    - name: ENABLE_DEBUG_MODE
+      type: String
+      value: "false"
+    - name: REPLICA_COUNT
+      type: Number
+      value: 2
+    - name: DB_HOST
+      type: String
+      value: staging-db.internal.example.com
+    - name: DB_NAME
+      type: String
+      value: ecommerce_staging
+    - name: DB_PASSWORD
+      type: Secret
+      value: <+secrets.getValue("staging_db_password")>
+    - name: CACHE_TTL
+      type: Number
+      value: 300
+    - name: FEATURE_FLAGS_ENABLED
+      type: String
+      value: "true"
+
+---
+# Production Environment
+environment:
+  identifier: prod
+  name: Production
+  description: Production environment - requires approval for deployments
+  type: Production
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    tier: production
+    team: platform
+    cost_center: engineering
+    critical: "true"
+    pci_compliant: "true"
+    soc2_compliant: "true"
+  variables:
+    - name: LOG_LEVEL
+      type: String
+      value: warn
+    - name: ENABLE_DEBUG_MODE
+      type: String
+      value: "false"
+    - name: REPLICA_COUNT
+      type: Number
+      value: 5
+    - name: DB_HOST
+      type: String
+      value: prod-db.internal.example.com
+    - name: DB_NAME
+      type: String
+      value: ecommerce_prod
+    - name: DB_PASSWORD
+      type: Secret
+      value: <+secrets.getValue("prod_db_password")>
+    - name: CACHE_TTL
+      type: Number
+      value: 3600
+    - name: FEATURE_FLAGS_ENABLED
+      type: String
+      value: "false"
+    - name: ENABLE_RATE_LIMITING
+      type: String
+      value: "true"
+    - name: RATE_LIMIT_RPS
+      type: Number
+      value: 1000
+
+---
+# Environment Group - Non-Production
+environmentGroup:
+  identifier: non_prod
+  name: Non-Production Environments
+  description: All non-production environments for batch operations
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  envIdentifiers:
+    - dev
+    - staging
+  tags:
+    type: group
+    category: non-prod

@@ -1,0 +1,136 @@
+# Git Connector Examples
+# Various Git provider connector configurations
+
+---
+# GitHub HTTP Connector with PAT
+connector:
+  identifier: github_http
+  name: GitHub HTTP
+  description: GitHub connector using personal access token
+  type: Github
+  spec:
+    url: https://github.com/myorg
+    authentication:
+      type: Http
+      spec:
+        type: UsernameToken
+        spec:
+          username: ci-bot
+          tokenRef: github_pat
+    apiAccess:
+      type: Token
+      spec:
+        tokenRef: github_pat
+    delegateSelectors:
+      - harness-delegate
+    executeOnDelegate: true
+
+---
+# GitHub SSH Connector
+connector:
+  identifier: github_ssh
+  name: GitHub SSH
+  description: GitHub connector using SSH key authentication
+  type: Github
+  spec:
+    url: git@github.com:myorg
+    authentication:
+      type: Ssh
+      spec:
+        sshKeyRef: github_ssh_key
+    apiAccess:
+      type: Token
+      spec:
+        tokenRef: github_pat
+    delegateSelectors:
+      - harness-delegate
+
+---
+# GitHub App Connector
+connector:
+  identifier: github_app
+  name: GitHub App
+  description: GitHub connector using GitHub App for better rate limits
+  type: Github
+  spec:
+    url: https://github.com/myorg
+    authentication:
+      type: Http
+      spec:
+        type: GitHubApp
+        spec:
+          installationId: "12345678"
+          applicationId: "123456"
+          privateKeyRef: github_app_private_key
+    apiAccess:
+      type: GitHubApp
+      spec:
+        installationId: "12345678"
+        applicationId: "123456"
+        privateKeyRef: github_app_private_key
+
+---
+# GitLab Connector
+connector:
+  identifier: gitlab_connector
+  name: GitLab
+  description: GitLab connector for source code
+  type: Gitlab
+  spec:
+    url: https://gitlab.com/myorg
+    authentication:
+      type: Http
+      spec:
+        type: UsernameToken
+        spec:
+          username: ci-bot
+          tokenRef: gitlab_token
+    apiAccess:
+      type: Token
+      spec:
+        tokenRef: gitlab_token
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Bitbucket Connector
+connector:
+  identifier: bitbucket_connector
+  name: Bitbucket
+  description: Bitbucket connector for source code
+  type: Bitbucket
+  spec:
+    url: https://bitbucket.org/myorg
+    authentication:
+      type: Http
+      spec:
+        type: UsernameToken
+        spec:
+          username: ci-bot
+          tokenRef: bitbucket_app_password
+    apiAccess:
+      type: UsernameToken
+      spec:
+        username: ci-bot
+        tokenRef: bitbucket_app_password
+
+---
+# Azure Repos Connector
+connector:
+  identifier: azure_repos
+  name: Azure Repos
+  description: Azure DevOps Repos connector
+  type: AzureRepo
+  spec:
+    url: https://dev.azure.com/myorg
+    authentication:
+      type: Http
+      spec:
+        type: UsernameToken
+        spec:
+          username: ci-bot
+          tokenRef: azure_pat
+    apiAccess:
+      type: Token
+      spec:
+        tokenRef: azure_pat

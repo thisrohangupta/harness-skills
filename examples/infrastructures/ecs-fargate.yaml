@@ -1,0 +1,63 @@
+# ECS Fargate Infrastructure Example
+# Infrastructure definitions for ECS deployments
+
+---
+# ECS Development
+infrastructureDefinition:
+  identifier: ecs_dev
+  name: ECS Development
+  description: ECS Fargate cluster for development
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: dev
+  deploymentType: ECS
+  type: ECS
+  tags:
+    platform: fargate
+    region: us-east-1
+    tier: development
+  spec:
+    connectorRef: aws_connector
+    region: us-east-1
+    cluster: dev-ecs-cluster
+
+---
+# ECS Staging
+infrastructureDefinition:
+  identifier: ecs_staging
+  name: ECS Staging
+  description: ECS Fargate cluster for staging
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: staging
+  deploymentType: ECS
+  type: ECS
+  tags:
+    platform: fargate
+    region: us-east-1
+    tier: staging
+  spec:
+    connectorRef: aws_connector
+    region: us-east-1
+    cluster: staging-ecs-cluster
+
+---
+# ECS Production
+infrastructureDefinition:
+  identifier: ecs_prod
+  name: ECS Production
+  description: ECS Fargate cluster for production workloads
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  environmentRef: prod
+  deploymentType: ECS
+  type: ECS
+  tags:
+    platform: fargate
+    region: us-east-1
+    tier: production
+    critical: "true"
+  spec:
+    connectorRef: aws_prod_connector
+    region: us-east-1
+    cluster: prod-ecs-cluster

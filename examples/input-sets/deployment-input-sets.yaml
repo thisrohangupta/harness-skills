@@ -1,0 +1,208 @@
+# Deployment Input Set Examples
+# Reusable input configurations for deployment pipelines
+
+---
+# Development Input Set
+inputSet:
+  identifier: deploy_dev
+  name: Deploy to Development
+  description: Input values for development deployments
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    environment: development
+    type: deployment
+  pipeline:
+    identifier: deploy_pipeline
+    variables:
+      - name: environment
+        type: String
+        value: dev
+      - name: replicas
+        type: Number
+        value: 1
+      - name: log_level
+        type: String
+        value: debug
+      - name: enable_debug
+        type: String
+        value: "true"
+    stages:
+      - stage:
+          identifier: deploy
+          type: Deployment
+          spec:
+            environment:
+              environmentRef: dev
+              infrastructureDefinitions:
+                - identifier: k8s_dev
+
+---
+# Staging Input Set
+inputSet:
+  identifier: deploy_staging
+  name: Deploy to Staging
+  description: Input values for staging deployments
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    environment: staging
+    type: deployment
+  pipeline:
+    identifier: deploy_pipeline
+    variables:
+      - name: environment
+        type: String
+        value: staging
+      - name: replicas
+        type: Number
+        value: 2
+      - name: log_level
+        type: String
+        value: info
+      - name: enable_debug
+        type: String
+        value: "false"
+    stages:
+      - stage:
+          identifier: deploy
+          type: Deployment
+          spec:
+            environment:
+              environmentRef: staging
+              infrastructureDefinitions:
+                - identifier: eks_staging
+
+---
+# Production Input Set
+inputSet:
+  identifier: deploy_prod
+  name: Deploy to Production
+  description: Input values for production deployments
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    environment: production
+    type: deployment
+    requires_approval: "true"
+  pipeline:
+    identifier: deploy_pipeline
+    variables:
+      - name: environment
+        type: String
+        value: production
+      - name: replicas
+        type: Number
+        value: 5
+      - name: log_level
+        type: String
+        value: warn
+      - name: enable_debug
+        type: String
+        value: "false"
+      - name: enable_canary
+        type: String
+        value: "true"
+      - name: canary_percentage
+        type: Number
+        value: 10
+    stages:
+      - stage:
+          identifier: approval
+          type: Approval
+          spec:
+            execution:
+              steps:
+                - step:
+                    identifier: prod_approval
+                    type: HarnessApproval
+                    spec:
+                      approvers:
+                        userGroups:
+                          - prod_approvers
+                        minimumCount: 2
+      - stage:
+          identifier: deploy
+          type: Deployment
+          spec:
+            environment:
+              environmentRef: prod
+              infrastructureDefinitions:
+                - identifier: eks_prod_east
+
+---
+# Artifact Version Input Set
+inputSet:
+  identifier: artifact_v2_0_0
+  name: Version 2.0.0 Release
+  description: Artifact inputs for v2.0.0 release
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    release: v2.0.0
+    type: artifact
+  pipeline:
+    identifier: deploy_pipeline
+    stages:
+      - stage:
+          identifier: deploy
+          type: Deployment
+          spec:
+            service:
+              serviceRef: backend_api
+              serviceInputs:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    artifacts:
+                      primary:
+                        primaryArtifactRef: docker_image
+                        sources:
+                          - identifier: docker_image
+                            type: DockerRegistry
+                            spec:
+                              tag: v2.0.0
+
+---
+# Overlay Input Set - Staging with Canary
+overlayInputSet:
+  identifier: staging_canary
+  name: Staging with Canary Deployment
+  description: Combines staging inputs with canary deployment strategy
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  pipeline:
+    identifier: deploy_pipeline
+  inputSetReferences:
+    - deploy_staging
+    - canary_config
+  tags:
+    type: overlay
+    strategy: canary
+
+---
+# Canary Configuration Input Set
+inputSet:
+  identifier: canary_config
+  name: Canary Configuration
+  description: Canary deployment configuration
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    strategy: canary
+    type: config
+  pipeline:
+    identifier: deploy_pipeline
+    variables:
+      - name: enable_canary
+        type: String
+        value: "true"
+      - name: canary_percentage
+        type: Number
+        value: 10
+      - name: canary_duration
+        type: String
+        value: "10m"
+      - name: auto_promote
+        type: String
+        value: "false"

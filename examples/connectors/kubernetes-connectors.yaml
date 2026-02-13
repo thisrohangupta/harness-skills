@@ -1,0 +1,100 @@
+# Kubernetes Connector Examples
+# Various K8s cluster connection configurations
+
+---
+# Kubernetes Direct - Service Account Token
+connector:
+  identifier: k8s_direct
+  name: Kubernetes Direct
+  description: Direct connection to K8s cluster with service account
+  type: K8sCluster
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        masterUrl: https://k8s-api.example.com:6443
+        auth:
+          type: ServiceAccount
+          spec:
+            serviceAccountTokenRef: k8s_sa_token
+            caCertRef: k8s_ca_cert
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Kubernetes Direct - Client Key Certificate
+connector:
+  identifier: k8s_client_cert
+  name: Kubernetes Client Cert
+  description: K8s connection using client certificate
+  type: K8sCluster
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        masterUrl: https://k8s-api.example.com:6443
+        auth:
+          type: ClientKeyCert
+          spec:
+            clientCertRef: k8s_client_cert
+            clientKeyRef: k8s_client_key
+            clientKeyPassphraseRef: k8s_key_passphrase
+            caCertRef: k8s_ca_cert
+            clientKeyAlgo: RSA
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Kubernetes - Inherit from Delegate (In-Cluster)
+connector:
+  identifier: k8s_delegate
+  name: Kubernetes In-Cluster
+  description: K8s connection using delegate's in-cluster credentials
+  type: K8sCluster
+  spec:
+    credential:
+      type: InheritFromDelegate
+    delegateSelectors:
+      - in-cluster-delegate
+
+---
+# Kubernetes - OpenID Connect
+connector:
+  identifier: k8s_oidc
+  name: Kubernetes OIDC
+  description: K8s connection using OpenID Connect
+  type: K8sCluster
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        masterUrl: https://k8s-api.example.com:6443
+        auth:
+          type: OpenIdConnect
+          spec:
+            oidcIssuerUrl: https://accounts.google.com
+            oidcClientIdRef: oidc_client_id
+            oidcPasswordRef: oidc_password
+            oidcScopes: openid profile email
+            oidcUsername: admin@example.com
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Rancher Kubernetes
+connector:
+  identifier: rancher_k8s
+  name: Rancher Managed Cluster
+  description: K8s cluster managed by Rancher
+  type: K8sCluster
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        masterUrl: https://rancher.example.com/k8s/clusters/c-xxxxx
+        auth:
+          type: ServiceAccount
+          spec:
+            serviceAccountTokenRef: rancher_token
+    delegateSelectors:
+      - rancher-delegate

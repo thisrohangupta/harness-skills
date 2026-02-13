@@ -666,19 +666,38 @@ harness-skills/
 │       └── audit-report.md          # MCP: Audit & compliance
 ├── examples/
 │   ├── v0/                          # v0 format examples
-│   │   └── python-flask-cicd.yaml
+│   │   ├── python-flask-cicd.yaml
+│   │   └── microservices-cicd.yaml
 │   ├── v1/                          # v1 format examples
-│   │   └── nodejs-cicd.yaml
+│   │   ├── nodejs-cicd.yaml
+│   │   └── go-microservice-cicd.yaml
 │   ├── templates/
 │   │   ├── docker-build-push-step.yaml
 │   │   └── k8s-blue-green-stage.yaml
 │   ├── triggers/
 │   │   └── github-cicd-triggers.yaml
-│   └── agents/                      # Agent template examples
-│       └── code-review-agent/
-│           ├── metadata.json
-│           ├── pipeline.yaml
-│           └── wiki.MD
+│   ├── agents/                      # Agent template examples
+│   │   └── code-review-agent/
+│   ├── services/                    # Service definition examples
+│   │   ├── kubernetes-backend-service.yaml
+│   │   ├── helm-microservice.yaml
+│   │   └── serverless-lambda.yaml
+│   ├── environments/                # Environment examples
+│   │   └── multi-environment-setup.yaml
+│   ├── infrastructures/             # Infrastructure examples
+│   │   ├── kubernetes-multi-cluster.yaml
+│   │   └── ecs-fargate.yaml
+│   ├── connectors/                  # Connector examples
+│   │   ├── git-connectors.yaml
+│   │   ├── cloud-connectors.yaml
+│   │   ├── registry-connectors.yaml
+│   │   └── kubernetes-connectors.yaml
+│   ├── secrets/                     # Secret examples
+│   │   └── common-secrets.yaml
+│   ├── input-sets/                  # Input set examples
+│   │   └── deployment-input-sets.yaml
+│   └── freezes/                     # Deployment freeze examples
+│       └── deployment-freezes.yaml
 ├── CLAUDE.md
 ├── LICENSE
 └── README.md
@@ -688,11 +707,13 @@ harness-skills/
 
 See the `examples/` directory for complete examples:
 
-**v0 Pipelines (Current):**
+**v0 Pipelines:**
 - **v0/python-flask-cicd.yaml** - Full CI/CD pipeline with ECR, K8s, approvals
+- **v0/microservices-cicd.yaml** - Complete microservices pipeline with security scanning and canary deployments
 
-**v1 Pipelines (New Simplified Format):**
+**v1 Pipelines (Simplified Format):**
 - **v1/nodejs-cicd.yaml** - CI/CD with caching, matrix testing, K8s deployment
+- **v1/go-microservice-cicd.yaml** - Go service pipeline with canary deployments
 
 **Templates:**
 - **templates/docker-build-push-step.yaml** - Reusable Docker build step template
@@ -700,6 +721,33 @@ See the `examples/` directory for complete examples:
 
 **Triggers:**
 - **triggers/github-cicd-triggers.yaml** - PR, push, release, and scheduled triggers
+
+**Services:**
+- **services/kubernetes-backend-service.yaml** - K8s service with Docker artifacts
+- **services/helm-microservice.yaml** - Helm-based service with ECR
+- **services/serverless-lambda.yaml** - AWS Lambda serverless service
+
+**Environments:**
+- **environments/multi-environment-setup.yaml** - Dev, staging, prod environments with variables
+
+**Infrastructures:**
+- **infrastructures/kubernetes-multi-cluster.yaml** - Multi-cluster K8s (EKS, GKE)
+- **infrastructures/ecs-fargate.yaml** - ECS Fargate infrastructure
+
+**Connectors:**
+- **connectors/git-connectors.yaml** - GitHub, GitLab, Bitbucket, Azure Repos
+- **connectors/cloud-connectors.yaml** - AWS, GCP, Azure cloud providers
+- **connectors/registry-connectors.yaml** - Docker Hub, ECR, GCR, ACR, Artifactory
+- **connectors/kubernetes-connectors.yaml** - K8s cluster connections
+
+**Secrets:**
+- **secrets/common-secrets.yaml** - API keys, passwords, SSH keys, certificates
+
+**Input Sets:**
+- **input-sets/deployment-input-sets.yaml** - Environment-specific deployment inputs
+
+**Freezes:**
+- **freezes/deployment-freezes.yaml** - Holiday, maintenance, and event freezes
 
 **Agent Templates:**
 - **agents/code-review-agent/** - AI-powered code review agent with PR commenting

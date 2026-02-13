@@ -1,0 +1,58 @@
+# Kubernetes Backend Service Example
+# A typical microservice with Docker artifacts and K8s manifests
+
+service:
+  identifier: backend_api
+  name: Backend API
+  description: Main backend API service for the e-commerce platform
+  tags:
+    team: platform
+    tier: backend
+    language: nodejs
+  serviceDefinition:
+    type: Kubernetes
+    spec:
+      manifests:
+        - manifest:
+            identifier: k8s_manifests
+            type: K8sManifest
+            spec:
+              store:
+                type: Github
+                spec:
+                  connectorRef: github_connector
+                  repoName: backend-api
+                  branch: main
+                  paths:
+                    - deploy/k8s/
+              valuesPaths:
+                - deploy/values.yaml
+                - deploy/values-<+env.name>.yaml
+              skipResourceVersioning: false
+      artifacts:
+        primary:
+          primaryArtifactRef: <+input>
+          sources:
+            - identifier: docker_image
+              type: DockerRegistry
+              spec:
+                connectorRef: dockerhub_connector
+                imagePath: myorg/backend-api
+                tag: <+input>
+      variables:
+        - name: LOG_LEVEL
+          type: String
+          value: info
+          description: Application log level
+        - name: REPLICA_COUNT
+          type: Number
+          value: <+input>
+          description: Number of pod replicas
+        - name: DB_HOST
+          type: String
+          value: <+env.variables.DB_HOST>
+          description: Database hostname from environment
+        - name: DB_PASSWORD
+          type: Secret
+          value: <+secrets.getValue("db_password")>
+          description: Database password

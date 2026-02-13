@@ -1,0 +1,155 @@
+# Container Registry Connector Examples
+# Docker Hub, ECR, GCR, ACR, and Artifactory configurations
+
+---
+# Docker Hub Connector
+connector:
+  identifier: dockerhub
+  name: Docker Hub
+  description: Docker Hub container registry
+  type: DockerRegistry
+  spec:
+    dockerRegistryUrl: https://index.docker.io/v2/
+    providerType: DockerHub
+    auth:
+      type: UsernamePassword
+      spec:
+        username: myorg
+        passwordRef: dockerhub_password
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Docker Hub Anonymous (for public images)
+connector:
+  identifier: dockerhub_public
+  name: Docker Hub Public
+  description: Docker Hub for public images only
+  type: DockerRegistry
+  spec:
+    dockerRegistryUrl: https://index.docker.io/v2/
+    providerType: DockerHub
+    auth:
+      type: Anonymous
+
+---
+# AWS ECR Connector
+connector:
+  identifier: ecr_connector
+  name: Amazon ECR
+  description: Amazon Elastic Container Registry
+  type: Aws
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        accessKey: AKIAXXXXXXXXXXXXXXXX
+        secretKeyRef: aws_secret_key
+      region: us-east-1
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Google Container Registry (GCR)
+connector:
+  identifier: gcr_connector
+  name: Google Container Registry
+  description: GCR for container images
+  type: Gcr
+  spec:
+    registryHostname: gcr.io
+    credential:
+      type: ManualConfig
+      spec:
+        secretKeyRef: gcp_service_account_key
+    delegateSelectors:
+      - gcp-delegate
+
+---
+# Google Artifact Registry
+connector:
+  identifier: gar_connector
+  name: Google Artifact Registry
+  description: Google Artifact Registry for containers and packages
+  type: Gar
+  spec:
+    credential:
+      type: ManualConfig
+      spec:
+        secretKeyRef: gcp_service_account_key
+    delegateSelectors:
+      - gcp-delegate
+
+---
+# Azure Container Registry (ACR)
+connector:
+  identifier: acr_connector
+  name: Azure Container Registry
+  description: ACR for container images
+  type: Acr
+  spec:
+    subscriptionId: 12345678-1234-1234-1234-123456789012
+    resourceGroup: container-registry-rg
+    azureEnvironmentType: AZURE
+    credential:
+      type: ManualConfig
+      spec:
+        applicationId: 12345678-1234-1234-1234-123456789012
+        tenantId: 87654321-4321-4321-4321-210987654321
+        auth:
+          type: Secret
+          spec:
+            secretRef: azure_client_secret
+    delegateSelectors:
+      - azure-delegate
+
+---
+# JFrog Artifactory
+connector:
+  identifier: artifactory
+  name: JFrog Artifactory
+  description: Artifactory for artifacts and Docker images
+  type: Artifactory
+  spec:
+    artifactoryServerUrl: https://myorg.jfrog.io/artifactory
+    auth:
+      type: UsernamePassword
+      spec:
+        username: ci-bot
+        passwordRef: artifactory_password
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Helm HTTP Repository
+connector:
+  identifier: helm_http
+  name: Helm Repository
+  description: Helm chart repository
+  type: HttpHelmRepo
+  spec:
+    helmRepoUrl: https://charts.example.com
+    auth:
+      type: UsernamePassword
+      spec:
+        username: helm-user
+        passwordRef: helm_password
+    delegateSelectors:
+      - harness-delegate
+
+---
+# Helm OCI Repository
+connector:
+  identifier: helm_oci
+  name: Helm OCI Registry
+  description: OCI-based Helm chart registry
+  type: OciHelmRepo
+  spec:
+    helmRepoUrl: oci://registry.example.com/charts
+    auth:
+      type: UsernamePassword
+      spec:
+        username: oci-user
+        passwordRef: oci_password
+    delegateSelectors:
+      - harness-delegate

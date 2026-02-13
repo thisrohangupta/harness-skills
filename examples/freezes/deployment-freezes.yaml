@@ -1,0 +1,193 @@
+# Deployment Freeze Examples
+# Various freeze window configurations
+
+---
+# Holiday Freeze - Complete Production Lockdown
+freeze:
+  identifier: holiday_2024
+  name: Holiday Freeze 2024
+  description: No production deployments during holiday period
+  status: Enabled
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    type: holiday
+    year: "2024"
+  entityConfigs:
+    - name: All Production Services
+      entities:
+        - type: Service
+          filterType: All
+        - type: EnvType
+          filterType: Equals
+          entityRefs:
+            - Production
+  windows:
+    - timeZone: America/New_York
+      startTime: 2024-12-23 00:00 AM
+      endTime: 2024-12-26 11:59 PM
+
+---
+# Weekend Freeze - Recurring Weekly
+freeze:
+  identifier: weekend_freeze
+  name: Weekend Production Freeze
+  description: No production deployments on weekends
+  status: Enabled
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    type: recurring
+    frequency: weekly
+  entityConfigs:
+    - name: Production Only
+      entities:
+        - type: Service
+          filterType: All
+        - type: EnvType
+          filterType: Equals
+          entityRefs:
+            - Production
+  windows:
+    - timeZone: UTC
+      startTime: 2024-01-06 00:00 AM
+      endTime: 2024-01-07 11:59 PM
+      recurrence:
+        type: Weekly
+        spec:
+          until: 2024-12-31 11:59 PM
+
+---
+# Black Friday Freeze
+freeze:
+  identifier: black_friday_2024
+  name: Black Friday Freeze 2024
+  description: Critical freeze during peak shopping period
+  status: Enabled
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    type: event
+    event: black_friday
+  entityConfigs:
+    - name: All Services All Environments
+      entities:
+        - type: Service
+          filterType: All
+        - type: EnvType
+          filterType: All
+        - type: Pipeline
+          filterType: All
+  windows:
+    - timeZone: America/New_York
+      startTime: 2024-11-28 00:00 AM
+      endTime: 2024-12-02 11:59 PM
+
+---
+# Maintenance Window Freeze - Monthly
+freeze:
+  identifier: maintenance_monthly
+  name: Monthly Maintenance Window
+  description: Freeze during monthly maintenance - first Sunday 2-6 AM UTC
+  status: Enabled
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    type: maintenance
+    frequency: monthly
+  entityConfigs:
+    - name: Production Environments
+      entities:
+        - type: Service
+          filterType: All
+        - type: EnvType
+          filterType: Equals
+          entityRefs:
+            - Production
+  windows:
+    - timeZone: UTC
+      startTime: 2024-01-07 02:00 AM
+      duration: 4h
+      recurrence:
+        type: Monthly
+        spec:
+          until: 2024-12-31 11:59 PM
+
+---
+# Critical Service Freeze
+freeze:
+  identifier: payment_freeze
+  name: Payment Service Freeze
+  description: Freeze deployments for payment services during audit
+  status: Enabled
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    type: audit
+    service: payment
+  entityConfigs:
+    - name: Payment Services
+      entities:
+        - type: Service
+          filterType: Equals
+          entityRefs:
+            - payment_service
+            - checkout_service
+            - billing_service
+        - type: EnvType
+          filterType: All
+  windows:
+    - timeZone: UTC
+      startTime: 2024-03-01 00:00 AM
+      endTime: 2024-03-15 11:59 PM
+
+---
+# Pipeline-Specific Freeze
+freeze:
+  identifier: release_pipeline_freeze
+  name: Release Pipeline Freeze
+  description: Freeze production release pipelines during incident
+  status: Disabled
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    type: incident
+    scope: pipeline
+  entityConfigs:
+    - name: Release Pipelines
+      entities:
+        - type: Pipeline
+          filterType: Equals
+          entityRefs:
+            - prod_release_pipeline
+            - hotfix_pipeline
+  windows:
+    - timeZone: UTC
+      startTime: 2024-03-10 00:00 AM
+      duration: 24h
+
+---
+# End of Quarter Freeze
+freeze:
+  identifier: eoq_freeze_q4
+  name: End of Quarter Freeze Q4
+  description: Change freeze during end of quarter close
+  status: Enabled
+  orgIdentifier: default
+  projectIdentifier: ecommerce
+  tags:
+    type: eoq
+    quarter: Q4
+  entityConfigs:
+    - name: All Production
+      entities:
+        - type: Service
+          filterType: All
+        - type: EnvType
+          filterType: Equals
+          entityRefs:
+            - Production
+  windows:
+    - timeZone: America/New_York
+      startTime: 2024-12-28 00:00 AM
+      endTime: 2025-01-02 11:59 PM
