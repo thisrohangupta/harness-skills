@@ -55,6 +55,33 @@ Create a Node.js CI pipeline that:
 - SSH / WinRM
 - And more...
 
+### `/create-pipeline-v1`
+
+Generate Harness.io v1 Pipeline YAML files using the new simplified syntax.
+
+**Capabilities:**
+- Simplified, concise YAML syntax
+- GitHub Actions compatibility (`jobs:` syntax)
+- Native matrix and looping strategies
+- Built-in caching intelligence
+- Expression syntax: `${{ }}`
+
+**Example Usage:**
+
+```
+/create-pipeline-v1
+
+Create a CI pipeline that:
+- Builds a Go application
+- Runs tests with matrix strategy (Go 1.20, 1.21)
+- Pushes Docker image on main branch
+```
+
+**Key Differences from v0:**
+- Cleaner syntax: `run: npm test` vs nested `spec` objects
+- Expressions: `${{ branch }}` vs `<+codebase.branch>`
+- GitHub compatible: Can use `jobs:` instead of `pipeline:`
+
 ### `/create-template`
 
 Generate Harness.io v0 Template YAML files for reusable pipeline components.
@@ -129,20 +156,24 @@ https://github.com/harness/harness-schema/tree/main/v0
 harness-skills/
 ├── .claude/
 │   └── skills/
-│       ├── create-pipeline.md    # Pipeline skill definition
-│       ├── create-template.md    # Template skill definition
-│       └── create-trigger.md     # Trigger skill definition
+│       ├── create-pipeline.md    # v0 Pipeline skill
+│       ├── create-pipeline-v1.md # v1 Pipeline skill (NEW)
+│       ├── create-template.md    # Template skill
+│       └── create-trigger.md     # Trigger skill
 ├── examples/
-│   ├── python-flask-cicd.yaml    # Example CI/CD pipeline
-│   ├── templates/                # Example templates
+│   ├── v0/                       # v0 format examples
+│   │   └── python-flask-cicd.yaml
+│   ├── v1/                       # v1 format examples (NEW)
+│   │   └── nodejs-cicd.yaml
+│   ├── templates/
 │   │   ├── docker-build-push-step.yaml
 │   │   └── k8s-blue-green-stage.yaml
-│   └── triggers/                 # Example triggers
+│   └── triggers/
 │       └── github-cicd-triggers.yaml
 ├── skills/
 │   └── create-pipeline/
-│       └── create-pipeline.md    # Detailed documentation
-├── CLAUDE.md                     # Claude Code configuration
+│       └── create-pipeline.md
+├── CLAUDE.md
 ├── LICENSE
 └── README.md
 ```
@@ -151,15 +182,18 @@ harness-skills/
 
 See the `examples/` directory for complete examples:
 
-**Pipelines:**
-- **python-flask-cicd.yaml** - Full CI/CD pipeline with build, test, Docker/ECR, Kubernetes deployment, approval gates, and notifications
+**v0 Pipelines (Current):**
+- **v0/python-flask-cicd.yaml** - Full CI/CD pipeline with ECR, K8s, approvals
+
+**v1 Pipelines (New Simplified Format):**
+- **v1/nodejs-cicd.yaml** - CI/CD with caching, matrix testing, K8s deployment
 
 **Templates:**
-- **templates/docker-build-push-step.yaml** - Reusable Docker build and push step template
-- **templates/k8s-blue-green-stage.yaml** - Kubernetes blue-green deployment stage template
+- **templates/docker-build-push-step.yaml** - Reusable Docker build step template
+- **templates/k8s-blue-green-stage.yaml** - Blue-green deployment stage template
 
 **Triggers:**
-- **triggers/github-cicd-triggers.yaml** - Complete CI/CD trigger setup with PR, push, and release triggers
+- **triggers/github-cicd-triggers.yaml** - PR, push, release, and scheduled triggers
 
 ## License
 

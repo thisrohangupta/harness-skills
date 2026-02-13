@@ -1,0 +1,211 @@
+# Node.js CI/CD Pipeline (v1 Format)
+#
+# A complete CI/CD pipeline demonstrating the v1 simplified syntax:
+# - Build and test with caching
+# - Matrix testing across Node versions
+# - Docker build and push
+# - Kubernetes deployment with approval gate
+#
+# Key v1 features shown:
+# - Simplified step syntax (run: command)
+# - Expression syntax (${{ }})
+# - Built-in caching
+# - Matrix strategy
+# - Parallel steps
+# - Service/environment for CD
+
+pipeline:
+  inputs:
+    node_version:
+      type: string
+      default: "18"
+      enum: ["16", "18", "20"]
+    environment:
+      type: string
+      default: staging
+      enum: [staging, production]
+    skip_tests:
+      type: boolean
+      default: false
+
+  env:
+    CI: "true"
+    DOCKER_REGISTRY: myregistry.io
+
+  on:
+  - push:
+      branches: [main, develop]
+  - pull_request:
+      branches: [main]
+
+  stages:
+  # Stage 1: Build and Test
+  - id: build
+    name: Build and Test
+    runtime: cloud
+    cache:
+      path: node_modules
+      key: npm-${{ hashFiles('package-lock.json') }}
+    steps:
+    - run: npm ci
+
+    - parallel:
+        steps:
+        - name: Lint
+          run: npm run lint
+        - name: Type Check
+          run: npm run typecheck
+        - name: Unit Tests
+          if: ${{ !inputs.skip_tests }}
+          run: npm test
+          report:
+            type: junit
+            path: junit.xml
+
+    - name: Build
+      run: npm run build
+
+    - name: Build Docker Image
+      action:
+        uses: docker-build-push
+        with:
+          repo: ${{ env.DOCKER_REGISTRY }}/nodejs-app
+          tags: |
+            ${{ commit }}
+            latest
+
+    outputs:
+      image_tag: ${{ commit }}
+
+  # Stage 2: Matrix Testing (Optional)
+  - id: compatibility
+    name: Compatibility Tests
+    if: ${{ branch == "main" }}
+    strategy:
+      matrix:
+        node: ["16", "18", "20"]
+      max-parallel: 3
+    steps:
+    - run: npm ci
+      container: node:${{ matrix.node }}
+    - run: npm test
+      container: node:${{ matrix.node }}
+
+  # Stage 3: Deploy to Staging
+  - id: deploy-staging
+    name: Deploy to Staging
+    if: ${{ branch == "main" }}
+    service: nodejs-app
+    environment: staging
+    steps:
+    - action:
+        uses: kubernetes-rolling-deploy
+        with:
+          image: ${{ env.DOCKER_REGISTRY }}/nodejs-app:${{ stages.build.outputs.image_tag }}
+          dry-run: false
+
+    - name: Health Check
+      action:
+        uses: http
+        with:
+          url: https://staging.myapp.com/health
+          method: GET
+          assertion: status == 200
+      timeout: 2m
+
+  # Stage 4: Approval for Production
+  - if: ${{ inputs.environment == "production" && branch == "main" }}
+    approval:
+      uses: harness
+      with:
+        timeout: 24h
+        message: |
+          Approve production deployment?
+
+          Image: ${{ env.DOCKER_REGISTRY }}/nodejs-app:${{ stages.build.outputs.image_tag }}
+          Commit: ${{ commit }}
+        groups: [prod-approvers]
+        min-approvers: 1
+
+  # Stage 5: Deploy to Production
+  - id: deploy-prod
+    name: Deploy to Production
+    if: ${{ inputs.environment == "production" && branch == "main" }}
+    service: nodejs-app
+    environment: production
+    steps:
+    - action:
+        uses: kubernetes-rolling-deploy
+        with:
+          image: ${{ env.DOCKER_REGISTRY }}/nodejs-app:${{ stages.build.outputs.image_tag }}
+          dry-run: false
+
+    - name: Health Check
+      action:
+        uses: http
+        with:
+          url: https://myapp.com/health
+          method: GET
+          assertion: status == 200
+      timeout: 2m
+
+    - name: Notify Success
+      action:
+        uses: http
+        with:
+          url: ${{ secrets.SLACK_WEBHOOK }}
+          method: POST
+          body: |
+            {
+              "text": "Deployed nodejs-app to production: ${{ commit }}"
+            }
+
+    rollback:
+    - action:
+        uses: kubernetes-rollback
+    - name: Notify Rollback
+      action:
+        uses: http
+        with:
+          url: ${{ secrets.SLACK_WEBHOOK }}
+          method: POST
+          body: |
+            {
+              "text": "Rolled back nodejs-app in production"
+            }
+
+    on-failure:
+      errors: all
+      action: abort
+
+---
+# GitHub Actions Compatible Syntax
+# The same pipeline can be written in GitHub-compatible format
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+        cache: npm
+    - run: npm ci
+    - run: npm test
+    - run: npm run build
+    # Harness extension: template step
+    - template:
+        uses: account.docker-push
+        with:
+          repo: myregistry.io/nodejs-app
+          tags: latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - template:
+        uses: account.k8s-deploy
+        with:
+          environment: staging

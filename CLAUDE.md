@@ -37,6 +37,23 @@ Generate Harness.io v0 Template YAML files for reusable pipeline components. Thi
 - "Create a reusable test suite step group template"
 - "Build a pipeline template for standard CI/CD workflow"
 
+### /create-pipeline-v1
+
+Generate Harness.io v1 Pipeline YAML files using the new simplified syntax. This skill creates:
+
+- **Simplified CI Pipelines** - Clean, concise build and test workflows
+- **Simplified CD Pipelines** - Deployment with services and environments
+- **GitHub Actions Compatible** - Works with `jobs:` syntax
+- **Matrix Builds** - Multi-version, multi-platform testing
+- **Caching Intelligence** - Built-in cache support
+
+**Usage:** `/create-pipeline-v1` or ask Claude to create a v1/simplified pipeline
+
+**Examples:**
+- "Create a v1 CI pipeline for a Node.js app"
+- "Generate a simplified Kubernetes deployment pipeline"
+- "Create a GitHub Actions compatible pipeline with Harness extensions"
+
 ### /create-trigger
 
 Generate Harness.io v0 Trigger YAML files to automatically start pipelines. This skill can create:
