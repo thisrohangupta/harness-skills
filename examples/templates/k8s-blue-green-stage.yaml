@@ -1,0 +1,167 @@
+# Kubernetes Blue-Green Deployment Stage Template
+#
+# A reusable stage template for Kubernetes blue-green deployments with:
+# - Blue-green service creation
+# - Traffic shifting
+# - Automatic rollback on failure
+# - Health verification
+#
+# Variables:
+# - service_ref: Harness service reference
+# - environment_ref: Target environment reference
+# - infra_ref: Infrastructure definition reference
+# - health_check_url: Optional health check endpoint
+# - traffic_shift_percent: Initial traffic percentage to green
+# - verification_timeout: Time to wait for verification
+# - skip_dry_run: Skip Kubernetes dry run
+#
+# Usage in pipeline:
+#   - stage:
+#       identifier: deploy_staging
+#       name: Deploy to Staging
+#       template:
+#         templateRef: k8s_blue_green_deploy
+#         versionLabel: "1.0.0"
+#         templateInputs:
+#           spec:
+#             variables:
+#               service_ref: my_app_service
+#               environment_ref: staging
+#               infra_ref: k8s_staging_cluster
+#               health_check_url: "https://staging.myapp.com/health"
+
+template:
+  identifier: k8s_blue_green_deploy
+  name: Kubernetes Blue-Green Deployment
+  type: Stage
+  versionLabel: "1.0.0"
+  description: |
+    Blue-green deployment stage for Kubernetes with:
+    - Blue-green service creation
+    - Traffic shifting
+    - Automatic rollback on failure
+    - Health verification
+  tags:
+    category: deployment
+    platform: kubernetes
+    strategy: blue-green
+    maintainer: platform-team
+  variables:
+    - name: service_ref
+      type: String
+      description: "Harness service reference"
+    - name: environment_ref
+      type: String
+      description: "Target environment reference"
+    - name: infra_ref
+      type: String
+      description: "Infrastructure definition reference"
+    - name: health_check_url
+      type: String
+      description: "Health check endpoint URL"
+      default: ""
+    - name: traffic_shift_percent
+      type: Number
+      description: "Initial traffic percentage to shift to green"
+      default: 10
+    - name: verification_timeout
+      type: String
+      description: "Time to wait for verification before full rollout"
+      default: "5m"
+    - name: skip_dry_run
+      type: String
+      description: "Skip Kubernetes dry run"
+      default: "false"
+    - name: delegate_selectors
+      type: String
+      description: "Comma-separated delegate selectors"
+      default: ""
+  spec:
+    type: Deployment
+    spec:
+      deploymentType: Kubernetes
+      service:
+        serviceRef: <+stage.variables.service_ref>
+      environment:
+        environmentRef: <+stage.variables.environment_ref>
+        infrastructureDefinitions:
+          - identifier: <+stage.variables.infra_ref>
+      execution:
+        steps:
+          # Step 1: Deploy to green environment
+          - step:
+              identifier: blue_green_deploy
+              name: Blue-Green Deploy
+              type: K8sBlueGreenDeploy
+              spec:
+                skipDryRun: <+stage.variables.skip_dry_run>
+              timeout: 10m
+
+          # Step 2: Optional health check
+          - step:
+              identifier: health_check
+              name: Verify Health
+              type: Http
+              spec:
+                url: <+stage.variables.health_check_url>
+                method: GET
+                assertion: <+httpResponseCode> == 200
+              timeout: 2m
+              when:
+                stageStatus: Success
+                condition: <+stage.variables.health_check_url> != ""
+
+          # Step 3: Shift traffic to green
+          - step:
+              identifier: swap_services
+              name: Swap Blue-Green Services
+              type: K8sBGSwapServices
+              spec:
+                skipDryRun: <+stage.variables.skip_dry_run>
+              timeout: 10m
+
+          # Step 4: Final verification
+          - step:
+              identifier: final_verification
+              name: Final Verification
+              type: Http
+              spec:
+                url: <+stage.variables.health_check_url>
+                method: GET
+                assertion: <+httpResponseCode> == 200
+              timeout: 2m
+              when:
+                stageStatus: Success
+                condition: <+stage.variables.health_check_url> != ""
+
+        rollbackSteps:
+          - step:
+              identifier: rollback
+              name: Blue-Green Rollback
+              type: K8sBGSwapServices
+              spec:
+                skipDryRun: true
+              timeout: 10m
+          - step:
+              identifier: notify_rollback
+              name: Notify Rollback
+              type: ShellScript
+              spec:
+                shell: Bash
+                source:
+                  type: Inline
+                  spec:
+                    script: |
+                      echo "Blue-Green deployment rolled back!"
+                      echo "Service: <+stage.variables.service_ref>"
+                      echo "Environment: <+stage.variables.environment_ref>"
+                onDelegate: true
+              timeout: 1m
+    failureStrategies:
+      - onFailure:
+          errors:
+            - AllErrors
+          action:
+            type: StageRollback
+    when:
+      pipelineStatus: Success

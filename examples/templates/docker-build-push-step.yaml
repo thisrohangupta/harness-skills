@@ -1,0 +1,107 @@
+# Docker Build and Push Step Template
+#
+# A reusable step template for building and pushing Docker images
+# to various container registries (Docker Hub, ECR, GCR, ACR).
+#
+# Variables:
+# - registry_type: Target registry (dockerhub, ecr, gcr, acr)
+# - connector_ref: Connector reference for the registry
+# - image_name: Full image name/repository
+# - dockerfile: Path to Dockerfile
+# - context: Docker build context
+# - build_args: Optional build arguments
+#
+# Usage in pipeline:
+#   - step:
+#       identifier: build_push
+#       name: Build and Push
+#       template:
+#         templateRef: docker_build_push
+#         versionLabel: "1.0.0"
+#         templateInputs:
+#           spec:
+#             variables:
+#               registry_type: ecr
+#               connector_ref: aws_connector
+#               image_name: "123456789012.dkr.ecr.us-east-1.amazonaws.com/my-app"
+
+template:
+  identifier: docker_build_push
+  name: Docker Build and Push
+  type: Step
+  versionLabel: "1.0.0"
+  description: |
+    Builds a Docker image and pushes to a container registry.
+    Supports Docker Hub, ECR, GCR, and ACR.
+  tags:
+    category: build
+    type: docker
+    maintainer: platform-team
+  icon: "https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png"
+  variables:
+    - name: registry_type
+      type: String
+      description: "Target registry: dockerhub, ecr, gcr, or acr"
+      default: "dockerhub"
+    - name: connector_ref
+      type: String
+      description: "Harness connector reference for the registry"
+    - name: image_name
+      type: String
+      description: "Full image name including registry path"
+    - name: dockerfile
+      type: String
+      description: "Path to Dockerfile"
+      default: "Dockerfile"
+    - name: context
+      type: String
+      description: "Docker build context directory"
+      default: "."
+    - name: build_args
+      type: String
+      description: "Docker build arguments (KEY=VALUE format, comma-separated)"
+      default: ""
+    - name: tags
+      type: String
+      description: "Comma-separated list of additional tags"
+      default: ""
+    - name: cache_enabled
+      type: String
+      description: "Enable Docker layer caching"
+      default: "true"
+    - name: memory_limit
+      type: String
+      description: "Memory limit for build"
+      default: "2Gi"
+    - name: cpu_limit
+      type: String
+      description: "CPU limit for build"
+      default: "1000m"
+  spec:
+    type: BuildAndPushDockerRegistry
+    spec:
+      connectorRef: <+spec.variables.connector_ref>
+      repo: <+spec.variables.image_name>
+      tags:
+        - <+pipeline.sequenceId>
+        - <+codebase.commitSha>
+        - latest
+      dockerfile: <+spec.variables.dockerfile>
+      context: <+spec.variables.context>
+      caching: <+spec.variables.cache_enabled>
+      resources:
+        limits:
+          memory: <+spec.variables.memory_limit>
+          cpu: <+spec.variables.cpu_limit>
+    timeout: 20m
+    failureStrategies:
+      - onFailure:
+          errors:
+            - AllErrors
+          action:
+            type: Retry
+            spec:
+              retryCount: 2
+              retryIntervals:
+                - 10s
+                - 30s
