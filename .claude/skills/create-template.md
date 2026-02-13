@@ -1,6 +1,6 @@
 ---
 name: create-template
-description: Generate Harness.io v0 Template YAML files for reusable pipeline components. Use when the user wants to create a Harness template, step template, stage template, pipeline template, or stepgroup template.
+description: Generate Harness.io v0 Template YAML files for reusable pipeline components and optionally create them via the Harness API. Use when the user wants to create a Harness template, step template, stage template, pipeline template, or stepgroup template.
 triggers:
   - harness template
   - create template
@@ -10,6 +10,7 @@ triggers:
   - stepgroup template
   - reusable step
   - reusable stage
+  - create template api
 ---
 
 # Create Template Skill
@@ -1031,6 +1032,352 @@ templateRef: my_template
 
 7. **Keep templates focused** - One template should do one thing well
 
+## Creating Templates via API
+
+After generating the template YAML, you can create it directly in Harness using the API.
+
+### API Reference
+
+**Endpoint:** `POST /template/api/templates`
+**Documentation:** https://apidocs.harness.io/templates/createtemplate
+
+### Request Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Content-Type` | Yes | Must be `application/yaml` |
+| `x-api-key` | Yes | Harness API key |
+
+### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `accountIdentifier` | string | Yes | Account ID |
+| `orgIdentifier` | string | No | Organization ID (for org/project scope) |
+| `projectIdentifier` | string | No | Project ID (for project scope) |
+| `storeType` | string | No | `INLINE` (default) or `REMOTE` |
+| `isNewTemplate` | boolean | No | `true` for new template, `false` for update |
+| `setDefaultTemplate` | boolean | No | Set as default/stable version |
+| `comments` | string | No | Version comments |
+
+### Git Storage Parameters (for REMOTE storeType)
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `connectorRef` | string | Git connector reference |
+| `repoName` | string | Repository name |
+| `branch` | string | Branch name |
+| `filePath` | string | File path in repo |
+| `commitMsg` | string | Commit message |
+| `isNewBranch` | boolean | Create new branch |
+| `baseBranch` | string | Base branch for new branch |
+
+### Example: Create Account-Level Template (Inline)
+
+```bash
+curl -X POST \
+  'https://app.harness.io/template/api/templates?accountIdentifier=ACCOUNT_ID&storeType=INLINE&isNewTemplate=true&comments=Initial%20version' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'template:
+  identifier: docker_build_push
+  name: Docker Build and Push
+  type: Step
+  versionLabel: "1.0.0"
+  description: "Build and push Docker image to registry"
+  tags:
+    category: build
+  variables:
+    - name: docker_connector
+      type: String
+      description: "Docker registry connector reference"
+    - name: image_name
+      type: String
+      description: "Docker image name"
+  spec:
+    type: BuildAndPushDockerRegistry
+    spec:
+      connectorRef: <+spec.variables.docker_connector>
+      repo: <+spec.variables.image_name>
+      tags:
+        - <+pipeline.sequenceId>
+        - latest
+    timeout: 20m'
+```
+
+### Example: Create Org-Level Template
+
+```bash
+curl -X POST \
+  'https://app.harness.io/template/api/templates?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&storeType=INLINE&isNewTemplate=true' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'template:
+  identifier: k8s_deploy_stage
+  name: Kubernetes Deploy Stage
+  type: Stage
+  versionLabel: "1.0.0"
+  orgIdentifier: default
+  description: "Standard Kubernetes deployment stage"
+  spec:
+    type: Deployment
+    spec:
+      deploymentType: Kubernetes
+      service:
+        serviceRef: <+input>
+      environment:
+        environmentRef: <+input>
+        infrastructureDefinitions: <+input>
+      execution:
+        steps:
+          - step:
+              identifier: rollout
+              name: Rollout Deployment
+              type: K8sRollingDeploy
+              spec:
+                skipDryRun: false
+              timeout: 10m
+        rollbackSteps:
+          - step:
+              identifier: rollback
+              name: Rollback
+              type: K8sRollingRollback
+              spec: {}
+    failureStrategies:
+      - onFailure:
+          errors:
+            - AllErrors
+          action:
+            type: StageRollback'
+```
+
+### Example: Create Project-Level Template
+
+```bash
+curl -X POST \
+  'https://app.harness.io/template/api/templates?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID&storeType=INLINE&isNewTemplate=true' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'template:
+  identifier: ci_stage_nodejs
+  name: Node.js CI Stage
+  type: Stage
+  versionLabel: "1.0.0"
+  projectIdentifier: my_project
+  orgIdentifier: default
+  description: "CI stage for Node.js applications"
+  spec:
+    type: CI
+    spec:
+      cloneCodebase: true
+      platform:
+        os: Linux
+        arch: Amd64
+      runtime:
+        type: Cloud
+        spec: {}
+      execution:
+        steps:
+          - step:
+              identifier: install
+              name: Install Dependencies
+              type: Run
+              spec:
+                shell: Bash
+                command: npm ci
+          - step:
+              identifier: test
+              name: Run Tests
+              type: Run
+              spec:
+                shell: Bash
+                command: npm test'
+```
+
+### Example: Create Pipeline Template
+
+```bash
+curl -X POST \
+  'https://app.harness.io/template/api/templates?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID&storeType=INLINE&isNewTemplate=true' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'template:
+  identifier: pipelineTemplate
+  name: Standard Pipeline Template
+  type: Pipeline
+  versionLabel: v1
+  projectIdentifier: PROJECT_ID
+  orgIdentifier: ORG_ID
+  tags: {}
+  spec:
+    stages:
+      - stage:
+          identifier: stage1
+          name: Build Stage
+          type: Deployment
+          spec:
+            deploymentType: Kubernetes
+            service:
+              serviceRef: <+input>
+              serviceInputs: <+input>
+            environment:
+              environmentRef: <+input>
+              deployToAll: false
+              environmentInputs: <+input>
+              infrastructureDefinitions: <+input>
+            execution:
+              steps:
+                - step:
+                    type: ShellScript
+                    name: Shell Script
+                    identifier: ShellScript_1
+                    spec:
+                      shell: Bash
+                      onDelegate: true
+                      source:
+                        type: Inline
+                        spec:
+                          script: <+input>
+                      environmentVariables: []
+                      outputVariables: []
+                    timeout: 10m
+              rollbackSteps: []
+          tags: {}
+          failureStrategies:
+            - onFailure:
+                errors:
+                  - AllErrors
+                action:
+                  type: StageRollback'
+```
+
+### Example: Create Template in Git (Remote Storage)
+
+```bash
+curl -X POST \
+  'https://app.harness.io/template/api/templates?accountIdentifier=ACCOUNT_ID&orgIdentifier=ORG_ID&projectIdentifier=PROJECT_ID&storeType=REMOTE&connectorRef=github_connector&repoName=harness-templates&branch=main&filePath=.harness/templates/docker-build.yaml&commitMsg=Add%20docker%20build%20template&isNewTemplate=true' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'template:
+  identifier: docker_build_push
+  name: Docker Build and Push
+  type: Step
+  versionLabel: "1.0.0"
+  spec:
+    type: BuildAndPushDockerRegistry
+    spec:
+      connectorRef: <+input>
+      repo: <+input>
+      tags:
+        - <+pipeline.sequenceId>
+    timeout: 20m'
+```
+
+### Example: Update Existing Template (New Version)
+
+```bash
+curl -X POST \
+  'https://app.harness.io/template/api/templates?accountIdentifier=ACCOUNT_ID&storeType=INLINE&isNewTemplate=false&comments=Added%20caching%20support' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'template:
+  identifier: docker_build_push
+  name: Docker Build and Push
+  type: Step
+  versionLabel: "1.1.0"
+  description: "Build and push Docker image with caching"
+  spec:
+    type: BuildAndPushDockerRegistry
+    spec:
+      connectorRef: <+input>
+      repo: <+input>
+      tags:
+        - <+pipeline.sequenceId>
+      caching: true
+    timeout: 20m'
+```
+
+### API Response
+
+**Success Response (200):**
+
+```json
+{
+  "status": "SUCCESS",
+  "data": {
+    "accountId": "ACCOUNT_ID",
+    "orgIdentifier": "ORG_ID",
+    "projectIdentifier": "PROJECT_ID",
+    "identifier": "docker_build_push",
+    "name": "Docker Build and Push",
+    "description": "Build and push Docker image to registry",
+    "tags": {
+      "category": "build"
+    },
+    "yaml": "template:\n  identifier: docker_build_push\n  ...",
+    "versionLabel": "1.0.0",
+    "templateEntityType": "Step",
+    "templateScope": "project",
+    "version": 0,
+    "gitDetails": null,
+    "entityValidityDetails": {
+      "valid": true
+    },
+    "lastUpdatedAt": 1705320000000,
+    "storeType": "INLINE",
+    "stableTemplate": false
+  }
+}
+```
+
+**Error Response (400):**
+
+```json
+{
+  "status": "ERROR",
+  "code": "INVALID_REQUEST",
+  "message": "Template with identifier [docker_build_push] and version [1.0.0] already exists",
+  "correlationId": "abc123"
+}
+```
+
+### Setting Stable Version
+
+After creating a template, you can set it as the stable (default) version:
+
+```bash
+curl -X POST \
+  'https://app.harness.io/template/api/templates?accountIdentifier=ACCOUNT_ID&storeType=INLINE&isNewTemplate=false&setDefaultTemplate=true' \
+  -H 'Content-Type: application/yaml' \
+  -H 'x-api-key: YOUR_API_KEY' \
+  -d 'template:
+  identifier: docker_build_push
+  name: Docker Build and Push
+  type: Step
+  versionLabel: "1.0.0"
+  spec:
+    ...'
+```
+
+### Common API Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Template already exists | Duplicate identifier + version | Use new version or update existing |
+| Invalid YAML | Syntax error | Validate YAML structure |
+| Missing required field | Missing identifier/name/type | Add required fields |
+| Invalid identifier | Pattern mismatch | Use `^[a-zA-Z_][0-9a-zA-Z_]{0,127}$` |
+| Connector not found | Invalid connectorRef | Verify connector exists |
+| Permission denied | Insufficient access | Check RBAC permissions |
+
+### Workflow: Generate and Create
+
+1. **Generate template YAML** using this skill
+2. **Review the YAML** for correctness
+3. **Construct API call** with appropriate scope
+4. **Execute API call** to create template
+5. **Verify creation** in Harness UI or via GET API
+
 ## Instructions
 
 When a user requests a template:
@@ -1040,6 +1387,7 @@ When a user requests a template:
    - What functionality should it provide?
    - What should be configurable via variables?
    - What scope? (Account, Org, Project)
+   - Should it be created via API or just generate YAML?
 
 2. **Generate valid YAML:**
    - Use correct identifier patterns: `^[a-zA-Z_][0-9a-zA-Z_]{0,127}$`
@@ -1058,3 +1406,22 @@ When a user requests a template:
    - Variable descriptions
 
 5. **Output the template YAML** in a code block for easy copying.
+
+6. **Optionally create via API:**
+   - If user wants to create the template in Harness directly
+   - Provide the curl command with appropriate parameters
+   - Include scope parameters (account/org/project)
+   - Choose storage type (INLINE or REMOTE for Git)
+   - Set `isNewTemplate=true` for new templates
+   - Set `isNewTemplate=false` for new versions of existing templates
+
+### API Creation Checklist
+
+When creating templates via API:
+
+- [ ] Account identifier is provided
+- [ ] Org/Project identifiers match template scope
+- [ ] API key has template create permissions
+- [ ] YAML is valid and includes all required fields
+- [ ] Version label is unique for the template
+- [ ] For Git storage: connector, repo, branch, filePath provided

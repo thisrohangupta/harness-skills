@@ -84,13 +84,14 @@ Create a CI pipeline that:
 
 ### `/create-template`
 
-Generate Harness.io v0 Template YAML files for reusable pipeline components.
+Generate Harness.io v0 Template YAML files for reusable pipeline components and optionally create them via the Harness API.
 
 **Capabilities:**
 - Step Templates - Reusable step definitions
 - Stage Templates - Reusable stage definitions
 - Pipeline Templates - Complete reusable pipelines
 - StepGroup Templates - Related steps bundled together
+- API Creation - Create templates directly in Harness
 
 **Example Usage:**
 
@@ -101,6 +102,7 @@ Create a step template for:
 - Building and pushing Docker images to ECR
 - Configurable image name and tags
 - Resource limits
+- Then create it in Harness via API
 ```
 
 **Supported Template Types:**
@@ -108,6 +110,8 @@ Create a step template for:
 - `Stage` - Reusable stages (CI, CD, Approval, Custom)
 - `Pipeline` - Complete pipeline definitions
 - `StepGroup` - Groups of related steps
+
+**API:** `POST /template/api/templates` | [Docs](https://apidocs.harness.io/templates/createtemplate)
 
 ### `/create-trigger`
 

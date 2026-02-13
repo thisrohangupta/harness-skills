@@ -22,7 +22,7 @@ Generate Harness.io v0 Pipeline YAML files. This skill understands the complete 
 
 ### /create-template
 
-Generate Harness.io v0 Template YAML files for reusable pipeline components. This skill can create:
+Generate Harness.io v0 Template YAML files for reusable pipeline components and optionally create them via the Harness API. This skill can create:
 
 - **Step Templates** - Reusable step definitions (build, deploy, test steps)
 - **Stage Templates** - Reusable stage definitions (CI stages, CD stages, approval stages)
@@ -36,6 +36,9 @@ Generate Harness.io v0 Template YAML files for reusable pipeline components. Thi
 - "Generate a stage template for Kubernetes deployment with rollback"
 - "Create a reusable test suite step group template"
 - "Build a pipeline template for standard CI/CD workflow"
+- "Create a template and push it to Harness via API"
+
+**API Reference:** https://apidocs.harness.io/templates/createtemplate
 
 ### /create-pipeline-v1
 
