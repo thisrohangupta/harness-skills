@@ -27,7 +27,6 @@ To add the Harness MCP server, configure it in your Claude Code settings (`~/.cl
       "command": "npx",
       "args": ["-y", "harness-mcp-v2"],
       "env": {
-        "HARNESS_ACCOUNT_ID": "<your-account-id>",
         "HARNESS_API_KEY": "<your-api-key>"
       }
     }
@@ -68,7 +67,6 @@ Paste the contents of `CLAUDE.md` as a project rule, or point Cursor to individu
       "command": "npx",
       "args": ["-y", "harness-mcp-v2"],
       "env": {
-        "HARNESS_ACCOUNT_ID": "<your-account-id>",
         "HARNESS_API_KEY": "<your-api-key>"
       }
     }
@@ -106,7 +104,6 @@ cp harness-skills/CLAUDE.md ./AGENTS.md
       "command": "npx",
       "args": ["-y", "harness-mcp-v2"],
       "env": {
-        "HARNESS_ACCOUNT_ID": "<your-account-id>",
         "HARNESS_API_KEY": "<your-api-key>"
       }
     }
@@ -146,7 +143,6 @@ Copilot automatically reads this file as project-level context in both GitHub.co
       "command": "npx",
       "args": ["-y", "harness-mcp-v2"],
       "env": {
-        "HARNESS_ACCOUNT_ID": "<your-account-id>",
         "HARNESS_API_KEY": "<your-api-key>"
       }
     }
