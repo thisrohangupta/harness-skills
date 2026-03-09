@@ -1,14 +1,16 @@
 ---
 name: create-pipeline-v1
 description: >-
-  Generate Harness v1 simplified Pipeline YAML using the new concise syntax with lowercase types, ${{ }}
-  expressions, and cleaner structure. Supports CI, deployment, and approval stages with native caching and
-  matrix strategies. Use when asked for a v1 pipeline, simplified pipeline, new pipeline format, or when
-  user specifically requests v1 syntax. Do NOT use for v0/standard pipelines (use create-pipeline).
-  Trigger phrases: v1 pipeline, simplified pipeline, new pipeline format, create v1, modern pipeline syntax.
+  Generate Harness v1 simplified Pipeline YAML using the new concise syntax with flat structure, ${{ }}
+  expressions, script field, and action steps. Supports CI stages (run, run-test, background), CD stages
+  (service/environment with action steps for K8s, Helm, ECS), approval (stage-level and inline), parallel
+  execution, matrix/for/while strategies, caching, volumes, and templates. Use when asked for a v1 pipeline,
+  simplified pipeline, new pipeline format, or when user specifically requests v1 syntax. Do NOT use for
+  v0/standard pipelines (use create-pipeline). Trigger phrases: v1 pipeline, simplified pipeline, new
+  pipeline format, create v1, modern pipeline syntax.
 metadata:
   author: Harness
-  version: 2.0.0
+  version: 3.0.0
   mcp-server: harness-mcp-v2
 license: Apache-2.0
 compatibility: Requires Harness MCP v2 server (harness-mcp-v2)
@@ -18,262 +20,390 @@ compatibility: Requires Harness MCP v2 server (harness-mcp-v2)
 
 Generate Harness v1 simplified Pipeline YAML and optionally push to Harness via MCP.
 
+**Alpha: This skill is currently in internal testing only.**
+
 ## Instructions
 
-1. **Confirm v1 format** - User must specifically want v1 syntax (lowercase types, `${{ }}` expressions). Default to v0 if unclear.
+1. **Confirm v1 format** - User must specifically want v1 syntax. Default to v0 (`/create-pipeline`) if unclear.
 2. **Clarify requirements** - Pipeline type (CI, CD, or both), language/framework, deployment target
-3. **Generate v1 YAML** using lowercase types (`ci`, `run`, `deployment`), `${{ }}` expressions, and `version: 1` header
-4. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
+3. **Consult the spec reference** - Use `references/v1-spec-schema.md` for the complete v1 schema, step types, action catalog, and examples
+4. **Generate v1 YAML** using flat structure, `${{ }}` expressions, `script` field for run steps, and `action` steps for deployments
+5. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
 
 ## v1 Key Differences from v0
 
-- Expression syntax: `${{ }}` instead of `<+ >`
-- Lowercase type names: `ci`, `run`, `deployment`
-- Simplified structure: less nesting, cleaner YAML
-- Native caching and matrix support
-- `run` field instead of `command` for Run steps
+| v0 Syntax | v1 Syntax |
+|-----------|-----------|
+| `<+variable>` expressions | `${{ variable }}` expressions |
+| `type: CI` / `type: Deployment` stage types | Flat stages -- no `type` field |
+| `command:` field in Run steps | `script:` field in `run:` steps |
+| Native steps (`K8sRollingDeploy`, `HelmDeploy`) | Action steps (`action: uses: kubernetes-rolling-deploy`) |
+| `failureStrategies:` | `on-failure:` |
+| `HarnessApproval` step type | `approval: uses: harness` (stage-level or inline) |
+| Deep nesting (`spec: execution: steps:`) | Flat structure (`steps:`) |
+| `strategy: matrix:` under stage `spec` | `strategy: matrix:` directly on stage or step |
 
 ## Pipeline Structure
 
 ```yaml
-version: 1
-kind: pipeline
-spec:
+pipeline:
+  name: My Pipeline
+  repo:                          # optional: repository config
+    connector: account.github
+    name: myorg/my-repo
+  clone:                         # optional: clone config
+    depth: 1
+  on:                            # optional: event triggers
+  - push:
+      branches: [main]
+  env:                           # optional: global env vars
+    NODE_ENV: production
+  inputs:                        # optional: pipeline inputs
+    branch:
+      type: string
+      default: main
   stages:
-    - name: build
-      type: ci
-      spec:
-        steps:
-          - name: test
-            type: run
-            spec:
-              shell: bash
-              run: npm test
+  - name: build
+    steps:
+    - run:
+        script: go build
 ```
 
-## Stage Types
+No `version:`, `kind:`, or `spec:` wrapper -- `pipeline:` is the root key.
+
+## Stages
+
+Stages have no `type` field. Their purpose is determined by their keys.
 
 ### CI Stage
 
 ```yaml
 - name: build
-  type: ci
-  spec:
-    clone: true
-    platform:
-      os: linux
-      arch: amd64
-    runtime:
-      type: cloud
-    steps:
-      - name: install
-        type: run
-        spec:
-          shell: bash
-          run: npm ci
+  runtime: cloud
+  platform:
+    os: linux
+    arch: arm
+  cache:
+    path: node_modules
+    key: npm.${{ branch }}
+  steps:
+  - run:
+      script: npm ci
 ```
 
 ### Deployment Stage
 
 ```yaml
 - name: deploy
-  type: deployment
-  spec:
-    deployment_type: kubernetes
-    service:
-      ref: my_service
-    environment:
-      ref: staging
-      infrastructure:
-        ref: k8s_staging
-    steps:
-      - name: rollout
-        type: k8s_rolling_deploy
-        spec:
-          skip_dry_run: false
+  service: my-service
+  environment: staging
+  steps:
+  - action:
+      uses: kubernetes-rolling-deploy
+      with:
+        dry-run: false
 ```
 
-### Approval Stage
+### Approval (stage-level)
 
 ```yaml
-- name: approval
-  type: approval
-  spec:
-    steps:
-      - name: approve
-        type: harness_approval
-        spec:
-          message: "Approve deployment?"
-          approvers:
-            user_groups: [prod_approvers]
-            min_count: 1
-          timeout: 1d
+- approval:
+    uses: harness
+    with:
+      timeout: 30m
+      message: "Approve deployment?"
+      groups: [admins, ops]
+      min-approvers: 1
 ```
 
 ## Step Types
 
-### Run
+### Run Step
+
+Uses `script:` field (not `command:` or `run:`).
+
 ```yaml
-- name: test
-  type: run
-  spec:
+# long syntax
+- run:
+    script: npm test
+
+# short syntax
+- run: npm test
+
+# with container
+- run:
+    container: node:18
+    script: npm test
+
+# with shell and env
+- run:
     shell: bash
-    run: |
+    script: |
       npm ci
       npm test
     env:
       NODE_ENV: test
-    reports:
-      - type: junit
-        paths: ["junit.xml"]
+
+# with output variables
+- id: build
+  run:
+    script: echo "TAG=v1" >> $HARNESS_OUTPUT
+    output: [TAG]
 ```
 
-### Run with Container
+### Run Test Step
+
 ```yaml
-- name: test_in_container
-  type: run
-  spec:
-    connector: dockerhub
-    image: node:18
-    shell: bash
-    run: npm test
+- run-test:
+    container: maven
+    script: mvn test
+    report:
+      type: junit
+      path: target/surefire-reports/*.xml
+    splitting:
+      concurrency: 4
 ```
 
-### Build and Push Docker
+### Action Step
+
+Actions replace v0 native steps. See `references/v1-spec-schema.md` for the full action catalog.
+
 ```yaml
-- name: docker_push
-  type: build_and_push_docker
-  spec:
-    connector: dockerhub
-    repo: myorg/myimage
-    tags:
-      - latest
-      - ${{ pipeline.sequenceId }}
+# Kubernetes deploy
+- action:
+    uses: kubernetes-rolling-deploy
+    with:
+      dry-run: false
+
+# Helm deploy
+- action:
+    uses: helm-deploy
+    with:
+      timeout: 10m
+
+# Terraform plan
+- action:
+    uses: terraform-plan
+    with:
+      command: apply
+      aws-provider: account.aws_connector
+
+# HTTP request
+- action:
+    uses: http
+    with:
+      method: GET
+      endpoint: https://acme.com
 ```
 
-## Variables and Expressions
+### Background Step
 
 ```yaml
-spec:
-  inputs:
-    env:
-      type: string
-      default: dev
-    version:
-      type: string
+- background:
+    container: redis
+- run:
+    script: npm test
 ```
 
-Expressions use `${{ }}`:
-- `${{ pipeline.variables.env }}` - Pipeline variable
-- `${{ stage.variables.x }}` - Stage variable
-- `${{ secrets.my_secret }}` - Secret reference
-- `${{ trigger.branch }}` - Trigger info
-- `${{ pipeline.sequenceId }}` - Build number
-- `${{ input }}` - Runtime input
-
-## Matrix Strategy
+### Template Step
 
 ```yaml
-- name: test
-  type: ci
-  strategy:
+- template:
+    uses: account.docker@1.0.0
+    with:
+      push: true
+      tags: latest
+```
+
+### Approval Step (inline)
+
+```yaml
+- approval:
+    uses: jira
+    with:
+      connector: account.jira
+      project: PROJ
+```
+
+## Parallel and Group
+
+```yaml
+# parallel steps
+- parallel:
+    steps:
+    - run:
+        script: npm run lint
+    - run:
+        script: npm test
+
+# parallel stages
+- parallel:
+    stages:
+    - steps:
+      - run: go test
+    - steps:
+      - run: npm test
+
+# step group
+- group:
+    steps:
+    - run:
+        script: go build
+    - run:
+        script: go test
+```
+
+## Strategy
+
+```yaml
+# matrix (stage-level)
+- strategy:
     matrix:
-      node_version: ["16", "18", "20"]
+      node: [16, 18, 20]
       os: [linux, macos]
-    max_concurrency: 3
-  spec:
-    steps:
-      - name: test
-        type: run
-        spec:
-          image: node:${{ matrix.node_version }}
-          run: npm test
+    max-parallel: 3
+  steps:
+  - run:
+      container: node:${{ matrix.node }}
+      script: npm test
+
+# matrix (step-level)
+- strategy:
+    matrix:
+      go: [1.19, 1.20, 1.21]
+  run:
+    container: golang:${{ matrix.go }}
+    script: go test
 ```
 
-## Caching
+## Failure Strategy
 
 ```yaml
-- name: build
-  type: ci
-  spec:
-    cache:
-      paths:
-        - node_modules
-      key: cache-{{ checksum "package-lock.json" }}
-    steps:
-      - name: install
-        type: run
-        spec:
-          run: npm ci
+# step-level
+- run:
+    script: go test
+  on-failure:
+    errors: all
+    action: ignore       # abort, ignore, retry, fail, success
+
+# retry with attempts
+- run:
+    script: go test
+  on-failure:
+    errors: [unknown]
+    action:
+      retry:
+        attempts: 5
+        interval: 10s
+        failure-action: fail
+
+# stage-level
+- steps:
+  - run:
+      script: go test
+  on-failure:
+    errors: all
+    action: abort
 ```
 
-## Parallel Execution
+## Conditional Execution
 
 ```yaml
-- name: tests
-  type: ci
-  spec:
-    steps:
-      - parallel:
-          - name: unit_test
-            type: run
-            spec:
-              run: npm run test:unit
-          - name: lint
-            type: run
-            spec:
-              run: npm run lint
+# stage conditional
+- if: ${{ branch == "main" }}
+  steps:
+  - run:
+      script: deploy.sh
+
+# step conditional
+- if: ${{ branch == "main" }}
+  run:
+    script: deploy.sh
 ```
 
 ## Complete CI Example
 
 ```yaml
-version: 1
-kind: pipeline
-spec:
-  inputs:
-    branch:
-      type: string
-      default: main
+pipeline:
+  repo:
+    connector: account.github
+    name: myorg/my-app
+  clone:
+    depth: 1
+  on:
+  - push:
+      branches: [main]
+  - pull_request:
+      branches: [main]
   stages:
-    - name: build_and_test
-      type: ci
-      spec:
-        clone: true
-        platform:
-          os: linux
-          arch: amd64
-        runtime:
-          type: cloud
-        cache:
-          paths: [node_modules]
-          key: npm-{{ checksum "package-lock.json" }}
+  - name: build-and-test
+    runtime: cloud
+    platform:
+      os: linux
+      arch: arm
+    cache:
+      path: node_modules
+      key: npm.${{ branch }}
+    steps:
+    - run:
+        script: npm ci
+    - parallel:
         steps:
-          - name: install
-            type: run
-            spec:
-              shell: bash
-              run: npm ci
-          - parallel:
-              - name: lint
-                type: run
-                spec:
-                  run: npm run lint
-              - name: test
-                type: run
-                spec:
-                  run: npm test
-                  reports:
-                    - type: junit
-                      paths: ["junit.xml"]
-          - name: docker_push
-            type: build_and_push_docker
-            spec:
-              connector: dockerhub
-              repo: myorg/my-app
-              tags:
-                - ${{ pipeline.sequenceId }}
-                - latest
+        - run:
+            script: npm run lint
+        - run-test:
+            script: npm test
+            report:
+              type: junit
+              path: junit.xml
+    - action:
+        uses: docker-build-push
+        with:
+          connector: dockerhub
+          repo: myorg/my-app
+          tags: [${{ pipeline.sequenceId }}, latest]
+```
+
+## Complete CD Example
+
+```yaml
+pipeline:
+  inputs:
+    skip_dry_run:
+      type: boolean
+      default: false
+  stages:
+  - name: deploy-staging
+    service: petstore
+    environment: staging
+    steps:
+    - action:
+        uses: manifest-download
+    - action:
+        uses: manifest-bake
+    - action:
+        uses: kubernetes-rolling-deploy
+        with:
+          dry-run: ${{ inputs.skip_dry_run }}
+  - approval:
+      uses: harness
+      with:
+        timeout: 1d
+        message: "Approve production deployment?"
+        groups: [prod-approvers]
+        min-approvers: 1
+  - name: deploy-prod
+    service: petstore
+    environment: prod
+    steps:
+    - action:
+        uses: manifest-download
+    - action:
+        uses: manifest-bake
+    - action:
+        uses: kubernetes-rolling-deploy
+        with:
+          dry-run: false
 ```
 
 ## Creating via MCP
@@ -300,30 +430,36 @@ Create a v1 CI pipeline for a Node.js app with caching, parallel lint and test, 
 
 ```
 /create-pipeline-v1
-Create a simplified Kubernetes deployment pipeline with staging and production stages
+Create a v1 Kubernetes deployment pipeline with staging approval and production stages
 ```
 
 ### Create a v1 matrix build
 
 ```
 /create-pipeline-v1
-Create a v1 pipeline that tests across Node 16, 18, and 20 using matrix strategy
+Create a v1 pipeline that tests across Go 1.19, 1.20, and 1.21 using matrix strategy
 ```
 
 ## Performance Notes
 
-- Double-check v1 syntax: lowercase types (`ci`, `run`, `deployment`), `${{ }}` expressions, and `version: 1` header.
-- Do not mix v0 and v1 syntax in the same pipeline. If in doubt about the format, ask the user.
-- Validate that all expressions use `${{ }}` and not `<+...>` before presenting.
+- Always consult `references/v1-spec-schema.md` for the complete v1 spec before generating YAML.
+- Use `script:` field in run steps, never `command:` or `run:` as the field name.
+- Use `action: uses:` for deployments, never v0 native step types like `K8sRollingDeploy`.
+- Do not mix v0 and v1 syntax. No `<+...>` expressions, no `type:` on stages, no `spec:` wrapper.
+- Validate all expressions use `${{ }}` syntax before presenting.
 
 ## Troubleshooting
 
 ### Common v1 Syntax Errors
+
 - Using `<+...>` instead of `${{ ... }}` expressions
-- Using uppercase type names (use lowercase: `ci`, `run`, `deployment`)
-- Using `command` instead of `run` for Run steps
-- Missing `version: 1` and `kind: pipeline` header
+- Adding `type:` field on stages (v1 stages have no type)
+- Using `command:` or `run:` as the field name instead of `script:`
+- Wrapping pipeline in `version:`, `kind:`, `spec:` (v1 uses bare `pipeline:`)
+- Using v0 step types (`K8sRollingDeploy`) instead of actions (`action: uses: kubernetes-rolling-deploy`)
+- Using `failureStrategies:` instead of `on-failure:`
 
 ### MCP Errors
+
 - `DUPLICATE_IDENTIFIER` - Pipeline exists; use `harness_update`
 - `INVALID_REQUEST` - Check YAML structure matches v1 schema
