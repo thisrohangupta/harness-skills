@@ -50,13 +50,7 @@ and pushes a Docker image to ECR
 git clone https://github.com/harness/harness-skills.git
 ```
 
-2. Add the skills as Cursor rules. Copy `CLAUDE.md` into your project's `.cursor/rules/harness.md`, or reference the skills directory in Cursor's settings:
-
-```
-Settings → Rules → Project Rules → Add Rule
-```
-
-Paste the contents of `CLAUDE.md` as a project rule, or point Cursor to individual `SKILL.md` files as context.
+2. The repo includes `.cursor/rules/harness.mdc` which Cursor automatically loads as a project rule -- no manual copying needed.
 
 3. Configure the Harness MCP server in Cursor (`~/.cursor/mcp.json`):
 
@@ -74,7 +68,7 @@ Paste the contents of `CLAUDE.md` as a project rule, or point Cursor to individu
 }
 ```
 
-4. Reference skills in your prompts by including the relevant `SKILL.md` as context or by asking Cursor to follow the instructions in the file:
+4. Reference individual skills in your prompts using `@file`:
 
 ```
 @harness-skills/skills/create-pipeline/SKILL.md
@@ -89,11 +83,7 @@ Create a CI pipeline for my Go service
 git clone https://github.com/harness/harness-skills.git
 ```
 
-2. Add `CLAUDE.md` as a system instruction file. Codex reads instruction files from the project root -- rename or copy it:
-
-```bash
-cp harness-skills/CLAUDE.md ./AGENTS.md
-```
+2. The repo includes `AGENTS.md` at the root, which Codex automatically reads as system instructions -- no manual copying needed.
 
 3. Configure the Harness MCP server in your Codex MCP config:
 
@@ -126,13 +116,7 @@ diagnose why my deploy pipeline failed
 git clone https://github.com/harness/harness-skills.git
 ```
 
-2. Add skills as Copilot custom instructions. Copy `CLAUDE.md` to your repo's `.github/copilot-instructions.md`:
-
-```bash
-cp harness-skills/CLAUDE.md .github/copilot-instructions.md
-```
-
-Copilot automatically reads this file as project-level context in both GitHub.com and VS Code.
+2. The repo includes `.github/copilot-instructions.md`, which Copilot automatically reads as project-level context in both GitHub.com and VS Code -- no manual copying needed.
 
 3. For VS Code, configure the Harness MCP server in your workspace settings (`.vscode/mcp.json`):
 
@@ -247,7 +231,10 @@ harness-skills/
 │   ├── environments/        # Environment examples
 │   ├── connectors/          # Connector examples
 │   └── ...
-├── CLAUDE.md                # Project instructions for Claude Code
+├── .cursor/rules/harness.mdc  # Auto-loaded by Cursor
+├── .github/copilot-instructions.md  # Auto-loaded by GitHub Copilot
+├── AGENTS.md                # Auto-loaded by OpenAI Codex
+├── CLAUDE.md                # Auto-loaded by Claude Code
 ├── CONTRIBUTING.md          # Contribution guidelines
 ├── LICENSE                  # Apache 2.0
 └── README.md
