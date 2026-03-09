@@ -27,8 +27,20 @@ Generate Harness v1 simplified Pipeline YAML and optionally push to Harness via 
 1. **Confirm v1 format** - User must specifically want v1 syntax. Default to v0 (`/create-pipeline`) if unclear.
 2. **Clarify requirements** - Pipeline type (CI, CD, or both), language/framework, deployment target
 3. **Consult the spec reference** - Use `references/v1-spec-schema.md` for the complete v1 schema, step types, action catalog, and examples
-4. **Generate v1 YAML** using flat structure, `${{ }}` expressions, `script` field for run steps, and `action` steps for deployments
-5. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
+4. **Select native actions** - Always prefer native action and template steps over `run:` steps. Consult `references/native-actions.md` for the full mapping. Key rules:
+   - Docker build/push → use `template: uses: buildAndPushToDocker` / `buildAndPushToECR` / `buildAndPushToGAR` (never `run: docker build && docker push`)
+   - K8s deploy → use `action: uses: kubernetes-rolling-deploy` or `template: uses: k8sRollingDeployStep` (never `run: kubectl apply`)
+   - Helm deploy → use `action: uses: helm-deploy` or `template: uses: helmDeployBasicStep` (never `run: helm upgrade --install`)
+   - ECS deploy → use `template: uses: ecsBluegreenDeployStep` (never `run: aws ecs update-service`)
+   - Terraform → use `template: uses: terraformStep` (never `run: terraform apply`)
+   - Security scanning → use native STO templates (`gitleaksStep`, `banditStep`, `sbomOrchestrationStep`)
+   - Uploads → use `template: uses: uploadArtifactsToS3` / `uploadArtifactsToGCS` (never `run: aws s3 cp`)
+   - Approvals → use `approval: uses: harness` or `approval: uses: jira` (never polling scripts)
+   - Ticketing → use `action: uses: jira-create` / `snow-create` (never `run: curl`)
+   - HTTP requests → use `action: uses: http` or `template: uses: httpStep` (never `run: curl`)
+   - Use `run:` steps only for custom build/test/lint commands with no native equivalent
+5. **Generate v1 YAML** using flat structure, `${{ }}` expressions, `script` field for run steps, and `action`/`template` steps for deployments
+6. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
 
 ## v1 Key Differences from v0
 
@@ -442,9 +454,10 @@ Create a v1 pipeline that tests across Go 1.19, 1.20, and 1.21 using matrix stra
 
 ## Performance Notes
 
+- Always check `references/native-actions.md` before using a `run:` step. Native actions provide better error handling, rollback support, and UI integration.
 - Always consult `references/v1-spec-schema.md` for the complete v1 spec before generating YAML.
 - Use `script:` field in run steps, never `command:` or `run:` as the field name.
-- Use `action: uses:` for deployments, never v0 native step types like `K8sRollingDeploy`.
+- Use `action: uses:` or `template: uses:` for deployments, never v0 native step types like `K8sRollingDeploy`.
 - Do not mix v0 and v1 syntax. No `<+...>` expressions, no `type:` on stages, no `spec:` wrapper.
 - Validate all expressions use `${{ }}` syntax before presenting.
 
