@@ -9,7 +9,7 @@ description: >-
   Harness pipeline, Kubernetes deploy pipeline.
 metadata:
   author: Harness
-  version: 2.0.0
+  version: 2.1.0
   mcp-server: harness-mcp-v2
 license: Apache-2.0
 compatibility: Requires Harness MCP v2 server (harness-mcp-v2)
@@ -30,8 +30,19 @@ Generate Harness v0 Pipeline YAML and optionally push to Harness via MCP.
    - Deployment manifests → Harness service/deployment type (k8s manifests → Kubernetes, Chart.yaml → NativeHelm, task-definition.json → ECS, serverless.yml → ServerlessAwsLambda)
    - Existing CI/CD configs for migration (GitHub Actions, Jenkins, GitLab CI, etc.)
 2. **Clarify requirements** - Confirm detected settings with the user. Ask about anything that couldn't be auto-detected: deployment target, cloud provider, approval gates, notification channels.
-3. **Generate valid YAML** following the structure below, using the detected build/test/deploy commands
-4. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
+3. **Select native steps** - Always prefer Harness native steps over `Run` or `ShellScript` steps. Consult `references/native-steps.md` for the full mapping. Key rules:
+   - Docker build/push → use `BuildAndPushDockerRegistry` / `BuildAndPushECR` / `BuildAndPushGCR` / `BuildAndPushACR` (never `Run: docker build && docker push`)
+   - K8s deploy → use `K8sRollingDeploy` / `K8sBlueGreenDeploy` / `K8sCanaryDeploy` (never `Run: kubectl apply`)
+   - Helm deploy → use `HelmDeploy` (never `Run: helm upgrade --install`)
+   - ECS deploy → use `EcsRollingDeploy` (never `Run: aws ecs update-service`)
+   - Terraform → use `TerraformPlan` / `TerraformApply` (never `Run: terraform apply`)
+   - Security scanning → use native STO steps (`AquaTrivy`, `Snyk`, `Sonarqube`, `Semgrep`, etc.)
+   - Uploads → use `S3Upload` / `GCSUpload` (never `Run: aws s3 cp`)
+   - Approvals → use `HarnessApproval` / `JiraApproval` (never polling scripts)
+   - Ticketing → use `JiraCreate` / `ServiceNowCreate` (never `Run: curl`)
+   - Use `Run` steps only for custom build/test/lint commands with no native equivalent
+4. **Generate valid YAML** following the structure below, using the detected build/test/deploy commands
+5. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
 
 ## Pipeline Structure
 
@@ -181,7 +192,7 @@ pipeline:
     timeout: 10m
 ```
 
-For additional step types (BuildAndPushECR, BuildAndPushGCR, BuildAndPushACR, TerraformApply, HelmDeploy, ShellScript, Http, Background, Plugin, RestoreCacheGCS, SaveCacheGCS, S3Upload, GCSUpload, RunTests), consult `references/v0-pipeline-schema.md`.
+For the complete catalog of 300+ native step types (cloud deployments, security scanners, IaC, ticketing, approvals, GitOps, and more), consult `references/native-steps.md`. Always check this reference before using a `Run` step.
 
 ## Variables and Expressions
 
