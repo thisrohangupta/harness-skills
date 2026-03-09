@@ -4,17 +4,130 @@ Claude Code skills for the [Harness.io](https://harness.io) CI/CD platform. Gene
 
 ## Prerequisites
 
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
 - [Harness MCP v2 Server](https://github.com/thisrohangupta/harness-mcp-v2) -- required for MCP-powered skills. Most skills in this repo depend on this server for Harness API access.
 
-## Installation
+## Setup
+
+### Claude Code
+
+Clone the repo and run Claude Code from the project directory. Skills are automatically discovered from `CLAUDE.md` and `skills/*/SKILL.md`:
 
 ```bash
 git clone https://github.com/harness/harness-skills.git
 cd harness-skills
+claude
 ```
 
-Skills are automatically available when Claude Code runs in this directory.
+To add the Harness MCP server, configure it in your Claude Code settings (`~/.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "harness-mcp-v2": {
+      "command": "npx",
+      "args": ["-y", "harness-mcp-v2"],
+      "env": {
+        "HARNESS_ACCOUNT_ID": "<your-account-id>",
+        "HARNESS_API_KEY": "<your-api-key>"
+      }
+    }
+  }
+}
+```
+
+Invoke skills by name:
+
+```
+/create-pipeline
+Create a CI pipeline for a Node.js app that builds, runs tests,
+and pushes a Docker image to ECR
+```
+
+### Cursor
+
+1. Clone the repo into your project or as a reference workspace:
+
+```bash
+git clone https://github.com/harness/harness-skills.git
+```
+
+2. Add the skills as Cursor rules. Copy `CLAUDE.md` into your project's `.cursor/rules/harness.md`, or reference the skills directory in Cursor's settings:
+
+```
+Settings → Rules → Project Rules → Add Rule
+```
+
+Paste the contents of `CLAUDE.md` as a project rule, or point Cursor to individual `SKILL.md` files as context.
+
+3. Configure the Harness MCP server in Cursor (`~/.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "harness-mcp-v2": {
+      "command": "npx",
+      "args": ["-y", "harness-mcp-v2"],
+      "env": {
+        "HARNESS_ACCOUNT_ID": "<your-account-id>",
+        "HARNESS_API_KEY": "<your-api-key>"
+      }
+    }
+  }
+}
+```
+
+4. Reference skills in your prompts by including the relevant `SKILL.md` as context or by asking Cursor to follow the instructions in the file:
+
+```
+@harness-skills/skills/create-pipeline/SKILL.md
+Create a CI pipeline for my Go service
+```
+
+### OpenAI Codex
+
+1. Clone the repo into your working directory:
+
+```bash
+git clone https://github.com/harness/harness-skills.git
+```
+
+2. Add `CLAUDE.md` as a system instruction file. Codex reads instruction files from the project root -- rename or copy it:
+
+```bash
+cp harness-skills/CLAUDE.md ./AGENTS.md
+```
+
+3. Configure the Harness MCP server in your Codex MCP config:
+
+```json
+{
+  "mcpServers": {
+    "harness-mcp-v2": {
+      "command": "npx",
+      "args": ["-y", "harness-mcp-v2"],
+      "env": {
+        "HARNESS_ACCOUNT_ID": "<your-account-id>",
+        "HARNESS_API_KEY": "<your-api-key>"
+      }
+    }
+  }
+}
+```
+
+4. Reference individual skill files as context when prompting:
+
+```
+Using the instructions in harness-skills/skills/debug-pipeline/SKILL.md,
+diagnose why my deploy pipeline failed
+```
+
+### Windsurf / Other AI Editors
+
+The skills in this repo are plain Markdown files with YAML frontmatter. They work with any AI coding tool that supports:
+
+1. **System instructions** -- Use `CLAUDE.md` as project-level context
+2. **MCP servers** -- Connect the [Harness MCP v2 server](https://github.com/thisrohangupta/harness-mcp-v2) for API access
+3. **File context** -- Reference individual `skills/*/SKILL.md` files in prompts
 
 ## Skills
 
@@ -71,26 +184,6 @@ Skills are automatically available when Claude Code runs in this directory.
 | [`/scorecard-review`](skills/scorecard-review/SKILL.md) | Service maturity scorecards (IDP) |
 | [`/audit-report`](skills/audit-report/SKILL.md) | Audit trails and compliance reports |
 | [`/create-policy`](skills/create-policy/SKILL.md) | Create OPA governance policies for supply chain security |
-
-## Usage
-
-Invoke any skill by name in Claude Code:
-
-```
-/create-pipeline
-Create a CI pipeline for a Node.js app that builds, runs tests,
-and pushes a Docker image to ECR
-```
-
-```
-/debug-pipeline
-Why did my deploy-to-prod pipeline fail last night?
-```
-
-```
-/security-report
-Show me all critical vulnerabilities in the payments project
-```
 
 ## Project Structure
 
