@@ -34,7 +34,7 @@ Generate Harness v0 Pipeline YAML and optionally push to Harness via MCP.
    - **Registry:** which registry (Docker Hub, ECR, GCR, ACR), registry identifier/URL, repo path
    - **Cloud provider:** which account, region, and resource identifiers for connectors/infrastructure
    - **Approval gates, notification channels** if relevant
-   Never hardcode placeholder values (e.g. `123456789012`, `us-east-1`, `my-cluster`) for deployment target, region, registry, or cluster when the user did not specify them — ask the user instead.
+   **Critical rule:** Never hardcode placeholder values (e.g. `123456789012`, `us-east-1`, `my-cluster`) for deployment target, region, registry, or cluster when the user did not specify them — ask the user instead. If the user did not specify region, account ID, cluster, or registry (e.g. "deploys to ECS" with no region or cluster), ask the user for those values before generating YAML.
 3. **Select native steps** - Always prefer Harness native steps over `Run` or `ShellScript` steps. Consult `references/native-steps.md` for the full mapping. Key rules:
    - Docker build/push → use `BuildAndPushDockerRegistry` / `BuildAndPushECR` / `BuildAndPushGCR` / `BuildAndPushACR` (never `Run: docker build && docker push`)
    - K8s deploy → use `K8sRollingDeploy` / `K8sBlueGreenDeploy` / `K8sCanaryDeploy` (never `Run: kubectl apply`)
@@ -48,10 +48,6 @@ Generate Harness v0 Pipeline YAML and optionally push to Harness via MCP.
    - Use `Run` steps only for custom build/test/lint commands with no native equivalent
 4. **Generate valid YAML** following the structure below, using the detected build/test/deploy commands
 5. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
-
-## Critical Rules
-
-- **Do not hardcode deployment/registry/infrastructure placeholders** — If the user did not specify region, account ID, cluster, or registry (e.g. "deploys to ECS" with no region or cluster), ask the user for those values. Never fill in placeholder values like `123456789012`, `us-east-1`, or `my-cluster` without the user providing them.
 
 ## Pipeline Structure
 
