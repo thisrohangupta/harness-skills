@@ -9,7 +9,7 @@ description: >-
   Harness pipeline, Kubernetes deploy pipeline.
 metadata:
   author: Harness
-  version: 2.1.0
+  version: 2.2.0
   mcp-server: harness-mcp-v2
 license: Apache-2.0
 compatibility: Requires Harness MCP v2 server (harness-mcp-v2)
@@ -48,7 +48,7 @@ Generate Harness v0 Pipeline YAML and optionally push to Harness via MCP.
    - Use `Run` steps only for custom build/test/lint commands with no native equivalent
    - **Test steps:** Any Run step that runs unit or integration tests must include a `reports` block (e.g. `type: JUnit`, `spec.paths`) so Harness can capture results; see `references/codebase-analysis.md` for framework → report path.
 4. **Generate valid YAML** following the structure below, using the detected build/test/deploy commands. **Validation rules:** (a) Stage names must match `^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$` — use only letters, numbers, spaces, hyphens, underscores, or periods (no commas). (b) Every CI and CD stage must include a `failureStrategies` array (Approval stages do not require one). For CI use `MarkAsFailure` (never `Ignore` — it hides failures); for CD use `StageRollback`.
-5. **Optionally create via MCP** using `harness_create` with resource_type `pipeline`
+5. **Optionally create via MCP** — First verify the project exists (see "Creating via MCP" section below), then use `harness_create` with resource_type `pipeline` and `body: { yamlPipeline: "<YAML string>" }`
 
 ## Pipeline Structure
 
@@ -312,16 +312,26 @@ Reference matrix values in steps with `<+stage.matrix.TAG>` (e.g. `<+stage.matri
 
 After generating the YAML, create it in Harness:
 
+1. **Verify the project exists** — List projects with `harness_list` (resource_type: `project`, org_id) to confirm. If the project does not exist, create it first with `harness_create` (resource_type: `project`, body: `{ identifier, name }`) or ask the user.
+2. **Create the pipeline** — Use `harness_create` with the pipeline YAML serialized as a **`yamlPipeline`** string in the body. Do not pass a nested JSON `pipeline` object; it causes serialization errors.
+
 ```
 Call MCP tool: harness_create
 Parameters:
   resource_type: "pipeline"
   org_id: "<organization>"
   project_id: "<project>"
-  body: <the pipeline YAML>
+  body: { yamlPipeline: "<full pipeline YAML string, including 'pipeline:' root key>" }
 ```
 
-To update an existing pipeline:
+**Example body** (abbreviated):
+```json
+{
+  "yamlPipeline": "pipeline:\n  identifier: nodejs_ci\n  name: Node.js CI\n  projectIdentifier: my_project\n  orgIdentifier: default\n  stages:\n    - stage:\n        identifier: build\n        ..."
+}
+```
+
+To update an existing pipeline, use the same `yamlPipeline` format:
 
 ```
 Call MCP tool: harness_update
@@ -330,7 +340,7 @@ Parameters:
   resource_id: "<pipeline_identifier>"
   org_id: "<organization>"
   project_id: "<project>"
-  body: <the updated pipeline YAML>
+  body: { yamlPipeline: "<full updated pipeline YAML string>" }
 ```
 
 To verify it was created:
@@ -558,6 +568,7 @@ Create a pipeline with parallel test stages for unit tests, integration tests, a
 ## Performance Notes
 
 - Always check `references/native-steps.md` before using a Run step. Native steps provide better error handling and UI integration.
+- Verify the target project exists (`harness_list`, resource_type: `project`) before creating the pipeline.
 - Validate that all referenced connectors, services, and environments exist before creating the pipeline.
 - For CD pipelines, confirm the deployment type matches the service definition type.
 - Quality of generated YAML is more important than speed. Verify structure before submitting.
@@ -574,9 +585,11 @@ Create a pipeline with parallel test stages for unit tests, integration tests, a
 - **HarnessApproval:** "disallowPipelineExecutor: is missing but it is required" — add `approvers.disallowPipelineExecutor: true` to the step spec.
 
 ### MCP Creation Errors
-- `DUPLICATE_IDENTIFIER` - Pipeline already exists; use `harness_update` instead
-- `CONNECTOR_NOT_FOUND` - Create the connector first or fix connectorRef
-- `ACCESS_DENIED` - Check API key permissions
+- **Project not found** — Verify the project exists with `harness_list` (resource_type: `project`, org_id). Create it first with `harness_create` (resource_type: `project`, body: `{ identifier, name }`) or confirm org_id/project_id are correct.
+- **Missing required fields for pipeline: pipeline** — Pass the body as `{ yamlPipeline: "<full pipeline YAML string>" }` instead of a nested JSON `pipeline` object. Nested JSON causes serialization errors.
+- `DUPLICATE_IDENTIFIER` — Pipeline already exists; use `harness_update` instead
+- `CONNECTOR_NOT_FOUND` — Create the connector first or fix connectorRef
+- `ACCESS_DENIED` — Check API key permissions
 
 ### Ambiguous or Incomplete Requests
 - **"Deploys to ECS" / "K8s deploy" / "push to registry" with no specifics** — Ask the user for region, account ID, cluster name/ID, and which registry (ECR, Docker Hub, etc.) before generating YAML. Do not insert placeholder values (e.g. `us-east-1`, `123456789012`).
