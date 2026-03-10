@@ -295,13 +295,13 @@ Same structure but with S3-specific fields (region, bucket).
 ## Stage validation (required by API)
 
 - **Stage name:** Must match `^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$`. No commas; use letters, numbers, spaces, hyphens, underscores, or periods only.
-- **failureStrategies:** Every stage (including CI) must include a `failureStrategies` array. Use `Abort` for CI (never `Ignore`). Example for CI:
+- **failureStrategies:** Every stage (including CI) must include a `failureStrategies` array. Use `MarkAsFailure` for CI so the stage and pipeline actually fail and show as Failed (never `Ignore`). Example for CI:
   ```yaml
   failureStrategies:
     - onFailure:
         errors: [AllErrors]
         action:
-          type: Abort
+          type: MarkAsFailure
   ```
 
 ## CI Steps
