@@ -1,4 +1,6 @@
-# Harness Skills
+# UPDATE: Harness Skills are now moved into the Harness official GitHub Repo: https://github.com/harness/harness-skills 
+
+##Harness Skills
 
 Claude Code skills for the [Harness.io](https://harness.io) CI/CD platform. Generate pipeline YAML, manage resources, debug failures, analyze costs, and more from natural language.
 
